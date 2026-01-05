@@ -1,0 +1,288 @@
+stop_id,stop_code,stop_name,stop_lat,stop_lon,zone_id,stop_desc,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code
+900109,900109,12th Street / Oakland City Center,37.803482,-122.27163,79562,,,1,,,,
+900102,900102,12th Street / Oakland City Center,37.803471,-122.271589,79562,,,0,900109,,,2
+900103,900103,12th Street / Oakland City Center,37.803508,-122.271694,79562,,,0,900109,,,3
+900101,900101,12th Street / Oakland City Center,37.803463,-122.271596,79562,,,0,900109,,,1
+901509,901509,16th Street / Mission,37.765173,-122.419704,79573,,,1,,,,
+901502,901502,16th Street / Mission,37.76518,-122.419679,79573,,,0,901509,,,2
+901501,901501,16th Street / Mission,37.765176,-122.419755,79573,,,0,901509,,,1
+900209,900209,19th Street Oakland,37.808078,-122.268758,79563,,,1,,,,
+900202,900202,19th Street Oakland,37.80806,-122.268722,79563,,,0,900209,,,2
+900201,900201,19th Street Oakland,37.808065,-122.26872,79563,,,0,900209,,,1
+900203,900203,19th Street Oakland,37.808105,-122.268821,79563,,,0,900209,,,3
+901601,901601,24th Street / Mission,37.752422,-122.418518,79574,,,0,901609,,,1
+901609,901609,24th Street / Mission,37.752419,-122.418468,79574,,,1,,,,
+901602,901602,24th Street / Mission,37.752426,-122.418445,79574,,,0,901609,,,2
+WDUB_1,WDUB_1,6501 Golden Gate Dr Entrance / Exit,37.6999193,-121.9278887,79542,6501 Golden Gate Dr Entrance / Exit,,2,905209,,,
+COLS_1,COLS_1,71st Ave Entrance / Exit,37.75426882,-122.1966931,79542,71st Ave Entrance / Exit,,2,902309,,,
+12TH_5,12TH_5,A1 12th St and Broadway Entrance / Exit,37.80248356,-122.2725163,79542,A1 12th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_2,19TH_2,A1 17th and Broaddway Entrance / Exit,37.80728171,-122.269788,79542,A1 17th and Broaddway Entrance / Exit,,2,900209,,,
+16TH_1,16TH_1,A 16TH & Mission SW Entrance / Exit,37.76474212,-122.4200446,79542,A 16TH & Mission SW Entrance / Exit,,2,901509,,,
+POWL_7,POWL_7,A1 899 Market St Entrance / Exit,37.78456741,-122.4077827,79542,A1 899 Market St Entrance / Exit,,2,901309,,,
+BALB_2,BALB_2,A1 Geneva Ave Entrance / Exit,37.72081894,-122.4476262,79542,A1 Geneva Ave Entrance / Exit,,2,901809,,,
+EMBR_2,EMBR_2,A1 Market & Drumm Street (NE) Entrance / Exit,37.79367441,-122.3960289,79542,A1 Market & Drumm Street (NE) Entrance / Exit,,2,901169,,,
+MONT_1,MONT_1,A1 Market & Post Street (NW) Entrance / Exit,37.78892431,-122.4021896,79542,A1 Market & Post Street (NW) Entrance / Exit,,2,901209,,,
+LAKE_4,LAKE_4,A1 NE Chinatown Entrance / Exit,37.79759997,-122.265533,79542,A1 NE Chinatown Entrance / Exit,,2,902109,,,
+DBRK_4,DBRK_4,A1 Shattuck Ave & Addison Street (East) Entrance / Exit,37.87101374,-122.2681421,79542,A1 Shattuck Ave & Addison Street (East) Entrance / Exit,,2,904209,,,
+12TH_2,12TH_2,A2 13th St and Broadway Entrance / Exit,37.80340744,-122.2719304,79542,A2 13th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_3,19TH_3,A2 20th and Broadway Entrance / Exit,37.80885915,-122.2684978,79542,A2 20th and Broadway Entrance / Exit,,2,900209,,,
+24TH_3,24TH_3,A 24TH & Mission SW Entrance / Exit,37.75194137,-122.4188268,79542,A 24TH & Mission SW Entrance / Exit,,2,901609,,,
+BALB_1,BALB_1,A2 John F Foran Fwy (Ramp) Entrance / Exit,37.72197903,-122.4475126,79542,A2 John F Foran Fwy (Ramp) Entrance / Exit,,2,901809,,,
+EMBR_3,EMBR_3,A2 Market & Davis Street (North) Entrance / Exit,37.79289056,-122.397023,79542,A2 Market & Davis Street (North) Entrance / Exit,,2,901169,,,
+MONT_3,MONT_3,A2 Market & Montgomery Street (NE) Entrance / Exit,37.78918435,-122.4017634,79542,A2 Market & Montgomery Street (NE) Entrance / Exit,,2,901209,,,
+POWL_4,POWL_4,A2 Market Street & Ellis Street Entrance / Exit,37.78543666,-122.4064398,79542,A2 Market Street & Ellis Street Entrance / Exit,,2,901309,,,
+CIVC_6,CIVC_6,A2 Market Street & Hyde Street (SW) Entrance / Exit,37.77895821,-122.4146697,79542,A2 Market Street & Hyde Street (SW) Entrance / Exit,,2,901409,,,
+LAKE_3,LAKE_3,A2 SE 9th & Oak St Entrance / Exit,37.79738915,-122.2648327,79542,A2 SE 9th & Oak St Entrance / Exit,,2,902109,,,
+DBRK_2,DBRK_2,A2 Shattuck Ave & Allston Way (East) Entrance / Exit,37.8697081,-122.2677677,79542,A2 Shattuck Ave & Allston Way (East) Entrance / Exit,,2,904209,,,
+CIVC_2,CIVC_2,A3 1150 Market Street - UN Plaza Stairs Entrance / Exit,37.77975984,-122.4142508,79542,A3 1150 Market Street - UN Plaza Stairs Entrance / Exit,,2,901409,,,
+EMBR_5,EMBR_5,A3 Market Street & Front Street (NW) Entrance / Exit,37.79220331,-122.3978967,79542,A3 Market Street & Front Street (NW) Entrance / Exit,,2,901169,,,
+12TH_4,12TH_4,A3 Oakland City Center Entrance / Exit,37.80382846,-122.2718747,79542,A3 Oakland City Center Entrance / Exit,,2,900109,,,
+POWL_3,POWL_3,A3 Stockton Street Entrance / Exit,37.78586895,-122.4063542,79542,A3 Stockton Street Entrance / Exit,,2,901309,,,
+MONT_5,MONT_5,A3 Sutter Street Entrance / Exit,37.78995495,-122.4007242,79542,A3 Sutter Street Entrance / Exit,,2,901209,,,
+12TH_7,12TH_7,A4 Frank Ogawa Plaza Entrance / Exit,37.80476886,-122.2713179,79542,A4 Frank Ogawa Plaza Entrance / Exit,,2,900109,,,
+POWL_1,POWL_1,A4 Market Street & 4th Street (NE) Entrance / Exit,37.78603787,-122.4056644,79542,A4 Market Street & 4th Street (NE) Entrance / Exit,,2,901309,,,
+CIVC_4,CIVC_4,A4 Market Street & 7th Street (NW) Entrance / Exit,37.78035552,-122.4129008,79542,A4 Market Street & 7th Street (NW) Entrance / Exit,,2,901409,,,
+MONT_6,MONT_6,A4 Sansome Street Entrance / Exit,37.79050805,-122.4007031,79542,A4 Sansome Street Entrance / Exit,,2,901209,,,
+ASHB_2,ASHB_2,Adeline Street East Entrance / Exit Elevator,37.85275725,-122.2695656,79542,Adeline Street East Entrance / Exit Elevator,,2,904109,,,
+ASHB_1,ASHB_1,Adeline Street East Entrance / Exit Stairs,37.85239669,-122.2696952,79542,Adeline Street East Entrance / Exit Stairs,,2,904109,,,
+ASHB_3,ASHB_3,Adeline Street West Entrance / Exit,37.85280991,-122.2700392,79542,Adeline Street West Entrance / Exit,,2,904109,,,
+LAFY_1,LAFY_1,A Entrance / Exit,37.89353551,-122.1246527,79542,A Entrance / Exit,,2,903309,,,
+DALY_1,DALY_1,"A John Daly, Junipero Serra Blvd Entrance / Exit",37.70613241,-122.4690221,79542,"A John Daly, Junipero Serra Blvd Entrance / Exit",,2,901909,,,
+RICH_2,RICH_2,A Marina Way / 16th St Entrance / Exit,37.93686306,-122.3541695,79542,A Marina Way / 16th St Entrance / Exit,,2,904609,,,
+908302,908302,Antioch,37.995415,-121.780353,79560,,,0,908309,,,2
+908301,908301,Antioch,37.995343,-121.780373,79560,,,0,908309,,,1
+908309,908309,Antioch,37.995373,-121.780346,79560,,,1,,,,
+904109,904109,Ashby,37.853072,-122.269771,79578,,,1,,,,
+904102,904102,Ashby,37.853087,-122.269819,79578,,,0,904109,,,2
+904101,904101,Ashby,37.853069,-122.26975,79578,,,0,904109,,,1
+12TH_6,12TH_6,B1 12th St and Broadway Entrance / Exit,37.80239156,-122.2722823,79542,B1 12th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_6,19TH_6,B1 17th and Broadway Entrance / Exit,37.806916,-122.2694517,79542,B1 17th and Broadway Entrance / Exit,,2,900209,,,
+MONT_2,MONT_2,B1 598 Market St (SW) Entrance / Exit,37.78854856,-122.4021594,79542,B1 598 Market St (SW) Entrance / Exit,,2,901209,,,
+16TH_2,16TH_2,B 16TH & Mission NE Entrance / Exit,37.76527921,-122.4193381,79542,B 16TH & Mission NE Entrance / Exit,,2,901509,,,
+RICH_1,RICH_1,B 19th Street / Civic Center Entrance / Exit,37.93684597,-122.3530094,79542,B 19th Street / Civic Center Entrance / Exit,,2,904609,,,
+BALB_3,BALB_3,B1 Geneva Ave Entrance / Exit,37.72118206,-122.4473426,79542,B1 Geneva Ave Entrance / Exit,,2,901809,,,
+EMBR_1,EMBR_1,B1 Market & Spear Street (SE) Entrance / Exit,37.79352792,-122.3958486,79542,B1 Market & Spear Street (SE) Entrance / Exit,,2,901169,,,
+POWL_8,POWL_8,B1 Market Street & 5th Street Entrance / Exit,37.78372018,-122.4082722,79542,B1 Market Street & 5th Street Entrance / Exit,,2,901309,,,
+LAKE_1,LAKE_1,B1 NW 8th & Oak St Jack London Sq Entrance / Exit,37.79711347,-122.265587,79542,B1 NW 8th & Oak St Jack London Sq Entrance / Exit,,2,902109,,,
+DBRK_3,DBRK_3,B1 Shattuck Ave & Addison Street (West) Entrance / Exit,37.87100652,-122.2683743,79542,B1 Shattuck Ave & Addison Street (West) Entrance / Exit,,2,904209,,,
+12TH_1,12TH_1,B2 13th St and Broadway Entrance / Exit,37.80331574,-122.2717025,79542,B2 13th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_1,19TH_1,B2 19th and Broadway Entrance / Exit,37.80752258,-122.2690768,79542,B2 19th and Broadway Entrance / Exit,,2,900209,,,
+24TH_2,24TH_2,B 24TH & Mission NE Entrance / Exit,37.7524837,-122.4181116,79542,B 24TH & Mission NE Entrance / Exit,,2,901609,,,
+BALB_5,BALB_5,B2 (Elevator) Geneva Ave Entrance / Exit,37.72123959,-122.4475837,79542,B2 (Elevator) Geneva Ave Entrance / Exit,,2,901809,,,
+MONT_4,MONT_4,B2 Market & 2nd Street (South) Entrance / Exit,37.78941195,-122.4010512,79542,B2 Market & 2nd Street (South) Entrance / Exit,,2,901209,,,
+POWL_6,POWL_6,B2 Market Street & 5th Street (NE) Entrance / Exit,37.78438523,-122.4074231,79542,B2 Market Street & 5th Street (NE) Entrance / Exit,,2,901309,,,
+CIVC_7,CIVC_7,B2 Market Street & 8th Street (SE) Entrance / Exit,37.77881552,-122.4144769,79542,B2 Market Street & 8th Street (SE) Entrance / Exit,,2,901409,,,
+EMBR_4,EMBR_4,B2 Market Street & Main Street (South) Entrance / Exit,37.79289735,-122.3966319,79542,B2 Market Street & Main Street (South) Entrance / Exit,,2,901169,,,
+LAKE_2,LAKE_2,"B2 SW 8th St, Laney College Entrance / Exit",37.79707173,-122.265164,79542,"B2 SW 8th St, Laney College Entrance / Exit",,2,902109,,,
+CIVC_3,CIVC_3,B3 1150 Market Street Entrance / Exit,37.77952637,-122.4135636,79542,B3 1150 Market Street Entrance / Exit,,2,901409,,,
+12TH_3,12TH_3,B3 13th St and Broadway Entrance / Exit,37.80389985,-122.2713377,79542,B3 13th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_5,19TH_5,B3 19th and Broadway Entrance / Exit,37.80841601,-122.2685175,79542,B3 19th and Broadway Entrance / Exit,,2,900209,,,
+MONT_7,MONT_7,B3 575 Market St (SE) Entrance / Exit,37.78982095,-122.4005212,79542,B3 575 Market St (SE) Entrance / Exit,,2,901209,,,
+DBRK_5,DBRK_5,B3 DBRK Entrance / Exit,37.8700978,-122.2682197,79542,B3 DBRK Entrance / Exit,,2,904209,,,
+BALB_4,BALB_4,B3 Geneva Ave Entrance / Exit,37.72132864,-122.4473897,79542,B3 Geneva Ave Entrance / Exit,,2,901809,,,
+POWL_5,POWL_5,B3 Market Street & 4th Street (South) Entrance / Exit,37.78526132,-122.4063142,79542,B3 Market Street & 4th Street (South) Entrance / Exit,,2,901309,,,
+EMBR_6,EMBR_6,B3 Market Street & Fremont Street (SW) Entrance / Exit,37.79207678,-122.3976569,79542,B3 Market Street & Fremont Street (SW) Entrance / Exit,,2,901169,,,
+12TH_8,12TH_8,B4 14th St and Broadway Entrance / Exit,37.80425355,-122.2708022,79542,B4 14th St and Broadway Entrance / Exit,,2,900109,,,
+19TH_4,19TH_4,B4 20th and Broadway Entrance / Exit,37.80897507,-122.2678594,79542,B4 20th and Broadway Entrance / Exit,,2,900209,,,
+BALB_6,BALB_6,B4 John F Foran Fwy (Ramp) Entrance / Exit,37.72195895,-122.4473271,79542,B4 John F Foran Fwy (Ramp) Entrance / Exit,,2,901809,,,
+POWL_2,POWL_2,B4 Market Street & 4th Street (SE) Entrance / Exit,37.78590866,-122.4055202,79542,B4 Market Street & 4th Street (SE) Entrance / Exit,,2,901309,,,
+CIVC_5,CIVC_5,B4 Market Street & 7th Street (NE) Entrance / Exit,37.78013738,-122.4128003,79542,B4 Market Street & 7th Street (NE) Entrance / Exit,,2,901409,,,
+DBRK_1,DBRK_1,B4 Shattuck Ave & Allston Way (West) Entrance / Exit,37.86949729,-122.2681859,79542,B4 Shattuck Ave & Allston Way (West) Entrance / Exit,,2,904209,,,
+901801,901801,Balboa Park,37.721758,-122.44751,79576,,,0,901809,,,1
+901809,901809,Balboa Park,37.721747,-122.447457,79576,,,1,,,,
+901802,901802,Balboa Park,37.721748,-122.447433,79576,,,0,901809,,,2
+902509,902509,Bay Fair,37.696908,-122.126446,79546,,,1,,,,
+902501,902501,Bay Fair,37.696887,-122.126488,79546,,,0,902509,,,1
+902502,902502,Bay Fair,37.696938,-122.126431,79546,,,0,902509,,,2
+DALY_3,DALY_3,"B De Long St, St Charles Ave Entrance / Exit",37.7065093,-122.4687172,79542,"B De Long St, St Charles Ave Entrance / Exit",,2,901909,,,
+LAFY_2,LAFY_2,B Entrance / Exit,37.89284914,-122.1245266,79542,B Entrance / Exit,,2,903309,,,
+909509,909509,Berryessa / North San Jose,37.368473,-121.874681,79586,,,1,,,,
+909502,909502,Berryessa / North San Jose,37.368495,-121.874661,79586,,,0,909509,,,2
+909501,909501,Berryessa / North San Jose,37.368474,-121.874759,79586,,,0,909509,,,1
+905109,905109,Castro Valley,37.690737,-122.075601,79565,,,1,,,,
+905102,905102,Castro Valley,37.690776,-122.075615,79565,,,0,905109,,,2
+905101,905101,Castro Valley,37.690708,-122.075614,79565,,,0,905109,,,1
+901409,901409,Civic Center / UN Plaza,37.779408,-122.413826,79572,,,1,,,,
+901402,901402,Civic Center / UN Plaza,37.77938,-122.413804,79572,,,0,901409,,,2
+901401,901401,Civic Center / UN Plaza,37.77945,-122.413879,79572,,,0,901409,,,1
+902302,902302,Coliseum,37.753604,-122.196698,79544,,,0,902309,,,2
+902309,902309,Coliseum,37.753576,-122.196716,79544,,,1,,,,
+902301,902301,Coliseum,37.753558,-122.19676,79544,,,0,902309,,,1
+COLS_6,COLS_6,Coliseum/Airport Connector Entrance / Exit,37.75287881,-122.1958926,79542,Coliseum/Airport Connector Entrance / Exit,,2,902309,,,
+902303,902303,Coliseum - OAC,37.752225,-122.19627,79544,,,0,902309,,,3
+906101,906101,Colma,37.684642,-122.466167,79587,,,0,906109,,,1
+906109,906109,Colma,37.684635,-122.466157,79587,,,1,,,,
+906102,906102,Colma,37.684691,-122.466115,79587,,,0,906109,,,2
+903609,903609,Concord,37.973757,-122.029072,79556,,,1,,,,
+903602,903602,Concord,37.973773,-122.029126,79556,,,0,903609,,,2
+903601,903601,Concord,37.973751,-122.029046,79556,,,0,903609,,,1
+901909,901909,Daly City,37.706259,-122.468908,79577,,,1,,,,
+901903,901903,Daly City,37.706304,-122.468994,79577,,,0,901909,,,3
+901902,901902,Daly City,37.706227,-122.468851,79577,,,0,901909,,,2
+901901,901901,Daly City,37.706263,-122.468922,79577,,,0,901909,,,1
+904209,904209,Downtown Berkeley,37.87011,-122.268109,79579,,,1,,,,
+904201,904201,Downtown Berkeley,37.870117,-122.268078,79579,,,0,904209,,,1
+904202,904202,Downtown Berkeley,37.870113,-122.268166,79579,,,0,904209,,,2
+905302,905302,Dublin / Pleasanton,37.701692,-121.899242,79567,,,0,905309,,,2
+905309,905309,Dublin / Pleasanton,37.701646,-121.899229,79567,,,1,,,,
+905301,905301,Dublin / Pleasanton,37.70161,-121.899245,79567,,,0,905309,,,1
+PLZA_2,PLZA_2,East Concourse Central Entrance / Exit,37.90277042,-122.298929,79542,East Concourse Central Entrance / Exit,,2,904409,,,
+CONC_2,CONC_2,East Concourse Entrance / Exit,37.97350435,-122.029106,79542,East Concourse Entrance / Exit,,2,903609,,,
+DELN_2,DELN_2,East Concourse Entrance / Exit,37.92534279,-122.3168825,79542,East Concourse Entrance / Exit,,2,904509,,,
+SSAN_1,SSAN_1,East Concourse Entrance / Exit,37.66432397,-122.4438372,79542,East Concourse Entrance / Exit,,2,906209,,,
+COLM_2,COLM_2,East Entrance / Exit,37.68477192,-122.4660425,79542,East Entrance / Exit,,2,906109,,,
+BAYF_1,BAYF_1,East Entrance / Exit,37.6970844,-122.1264733,79542,East Entrance / Exit,,2,902509,,,
+SANL_2,SANL_2,East Entrance / Exit,37.7215173,-122.1604483,79542,East Entrance / Exit,,2,902409,,,
+DALY_2,DALY_2,East Parking Lot Entrance / Exit,37.70586212,-122.4687871,79542,East Parking Lot Entrance / Exit,,2,901909,,,
+FRMT_1,FRMT_1,East Plaza Entrance / Exit,37.55751288,-121.9764251,79542,East Plaza Entrance / Exit,,2,902909,,,
+MLPT_2,MLPT_2,East Station Entrance / Exit,37.41014388,-121.8906885,79542,East Station Entrance / Exit,,2,909409,,,
+904509,904509,El Cerrito Del Norte,37.925184,-122.316892,79582,,,1,,,,
+904501,904501,El Cerrito Del Norte,37.925205,-122.316868,79582,,,0,904509,,,1
+904502,904502,El Cerrito Del Norte,37.92517,-122.316942,79582,,,0,904509,,,2
+904402,904402,El Cerrito Plaza,37.902596,-122.29897,79581,,,0,904409,,,2
+904409,904409,El Cerrito Plaza,37.90261,-122.29892,79581,,,1,,,,
+904401,904401,El Cerrito Plaza,37.902633,-122.298895,79581,,,0,904409,,,1
+COLS_2,COLS_2,"Elevated Walkway to Amtrak Station, Coliseum Arena Entrance / Exit",37.75404085,-122.1973959,79542,"Elevated Walkway to Amtrak Station, Coliseum Arena Entrance / Exit",,2,902309,,,
+CIVC_1,CIVC_1,Elevator Entrance / Exit,37.77971412,-122.4136988,79542,Elevator Entrance / Exit,,2,901409,,,
+24TH_1,24TH_1,Elevator Entrance / Exit,37.75258328,-122.4183299,79542,Elevator Entrance / Exit,,2,901609,,,
+16TH_3,16TH_3,Elevator Entrance / Exit,37.76535367,-122.4195536,79542,Elevator Entrance / Exit,,2,901509,,,
+901169,901169,Embarcadero,37.792762,-122.397037,79569,,,1,,,,
+901161,901161,Embarcadero,37.792789,-122.39708,79569,,,0,901169,,,1
+901162,901162,Embarcadero,37.792741,-122.397019,79569,,,0,901169,,,2
+902901,902901,Fremont,37.557459,-121.976658,79550,,,0,902909,,,1
+902909,902909,Fremont,37.55748,-121.976619,79550,,,1,,,,
+902902,902902,Fremont,37.557513,-121.976605,79550,,,0,902909,,,2
+902201,902201,Fruitvale,37.774818,-122.224121,79543,,,0,902209,,,1
+902202,902202,Fruitvale,37.774873,-122.224067,79543,,,0,902209,,,2
+902209,902209,Fruitvale,37.774841,-122.224081,79543,,,1,,,,
+901709,901709,Glen Park,37.733235,-122.433515,79575,,,1,,,,
+901702,901702,Glen Park,37.733212,-122.433498,79575,,,0,901709,,,2
+901701,901701,Glen Park,37.733269,-122.433557,79575,,,0,901709,,,1
+902602,902602,Hayward,37.669731,-122.086941,79547,,,0,902609,,,2
+902601,902601,Hayward,37.669678,-122.087,79547,,,0,902609,,,1
+902609,902609,Hayward,37.669699,-122.086958,79547,,,1,,,,
+SBRN_1,SBRN_1,Huntington Ave Entrance / Exit,37.63779422,-122.4161662,79542,Huntington Ave Entrance / Exit,,2,906309,,,
+903302,903302,Lafayette,37.89322,-122.124644,79553,,,0,903309,,,2
+903301,903301,Lafayette,37.893155,-122.124621,79553,,,0,903309,,,1
+903309,903309,Lafayette,37.893183,-122.12462,79553,,,1,,,,
+902101,902101,Lake Merritt,37.797296,-122.265287,79542,,,0,902109,,,1
+902102,902102,Lake Merritt,37.797357,-122.265232,79542,,,0,902109,,,2
+902109,902109,Lake Merritt,37.797322,-122.265247,79542,,,1,,,,
+900301,900301,MacArthur,37.82879,-122.266978,79564,,,0,900309,,,1
+900309,900309,MacArthur,37.828803,-122.267105,79564,,,1,,,,
+900302,900302,MacArthur,37.828827,-122.267259,79564,,,0,900309,,,2
+900303,900303,MacArthur,37.828801,-122.267076,79564,,,0,900309,,,3
+900304,900304,MacArthur,37.828814,-122.267163,79564,,,0,900309,,,4
+WARM_1,WARM_1,Main (East) Entrance / Exit,37.50224647,-121.9384292,79542,Main (East) Entrance / Exit,,2,909209,,,
+MCAR_1,MCAR_1,Main Entrance / Exit,37.82907472,-122.2668635,79542,Main Entrance / Exit,,2,900309,,,
+FTVL_1,FTVL_1,Main Entrance / Exit,37.77508497,-122.2245116,79542,Main Entrance / Exit,,2,902209,,,
+SHAY_1,SHAY_1,Main Entrance / Exit,37.63451283,-122.0568568,79542,Main Entrance / Exit,,2,902709,,,
+MLBR_1,MLBR_1,Main Entrance / Exit,37.60045727,-122.3864466,79542,Main Entrance / Exit,,2,906409,,,
+ANTC_1,ANTC_1,Main Entrance / Exit,37.99580767,-121.7799827,79542,Main Entrance / Exit,,2,908309,,,
+ORIN_1,ORIN_1,Main Entrance / Exit,37.87811675,-122.1840791,79542,Main Entrance / Exit,,2,903209,,,
+PHIL_1,PHIL_1,Main Entrance / Exit,37.92840798,-122.0560262,79542,Main Entrance / Exit,,2,903509,,,
+PCTR_1,PCTR_1,Main Entrance / Exit,38.01690591,-121.8892988,79542,Main Entrance / Exit,,2,908209,,,
+DUBL_1,DUBL_1,Main Entrance / Exit,37.70164563,-121.8981928,79542,Main Entrance / Exit,,2,905309,,,
+NCON_1,NCON_1,Main Entrance / Exit,38.00310637,-122.0243927,79542,Main Entrance / Exit,,2,903709,,,
+PITT_1,PITT_1,Main Entrance / Exit,38.01824446,-121.945151,79542,Main Entrance / Exit,,2,903809,,,
+UCTY_1,UCTY_1,Main Entrance / Exit,37.59060466,-122.0174219,79542,Main Entrance / Exit,,2,902809,,,
+BERY_1,BERY_1,Main Entrance / Exit,37.36847018,-121.8745705,79542,Main Entrance / Exit,,2,909509,,,
+GLEN_1,GLEN_1,Main Entrance / Exit,37.7331807,-122.4338836,79542,Main Entrance / Exit,,2,901709,,,
+HAYW_1,HAYW_1,Main Entrance / Exit,37.66958056,-122.0866005,79542,Main Entrance / Exit,,2,902609,,,
+WCRK_1,WCRK_1,Main Entrance / Exit,37.90556696,-122.0676235,79542,Main Entrance / Exit,,2,903409,,,
+OAKL_1,OAKL_1,Main Entrance / Exit,37.71293493,-122.2125403,79542,Main Entrance / Exit,,2,907409,,,
+CAST_1,CAST_1,Main Entrance / Exit,37.69130901,-122.0759345,79542,Main Entrance / Exit,,2,905109,,,
+ROCK_2,ROCK_2,Main (South) Entrance / Exit,37.84450153,-122.2514363,79542,Main (South) Entrance / Exit,,2,903109,,,
+906409,906409,Millbrae,37.600237,-122.386757,79590,,,1,,,,
+906403,906403,Millbrae (Caltrain Transfer Platform),37.600199,-122.38684,79590,,,0,906409,,,3
+909401,909401,Milpitas,37.409808,-121.890883,79585,,,0,909409,,,1
+909409,909409,Milpitas,37.410277,-121.891081,79585,,,1,,,,
+909402,909402,Milpitas,37.409836,-121.890803,79585,,,0,909409,,,2
+901209,901209,Montgomery Street,37.789173,-122.401587,79570,,,1,,,,
+901201,901201,Montgomery Street,37.789213,-122.401642,79570,,,0,901209,,,1
+901202,901202,Montgomery Street,37.789143,-122.401558,79570,,,0,901209,,,2
+904302,904302,North Berkeley,37.874,-122.283591,79580,,,0,904309,,,2
+904309,904309,North Berkeley,37.874005,-122.283523,79580,,,1,,,,
+904301,904301,North Berkeley,37.874032,-122.283508,79580,,,0,904309,,,1
+903702,903702,North Concord / Martinez,38.003407,-122.024561,79557,,,0,903709,,,2
+903709,903709,North Concord / Martinez,38.003383,-122.024512,79557,,,1,,,,
+903701,903701,North Concord / Martinez,38.003369,-122.02449,79557,,,0,903709,,,1
+NBRK_1,NBRK_1,North Entrance / Exit,37.87408807,-122.283357,79542,North Entrance / Exit,,2,904309,,,
+BERY_2,BERY_2,North Entrance / Exit,37.36870565,-121.8747212,79542,North Entrance / Exit,,2,909509,,,
+WOAK_1,WOAK_1,North Station Entrance / Exit,37.80502917,-122.2953019,79542,North Station Entrance / Exit,,2,901109,,,
+COLS_4,COLS_4,OAK Connection Entrance / Exit,37.75399809,-122.1973464,79542,OAK Connection Entrance / Exit,,2,902309,,,
+907409,907409,Oakland International Airport,37.713256,-122.212237,79561,,,1,,,,
+907401,907401,Oakland International Airport Station,37.713256,-122.212237,79561,,,0,907409,,,1
+903201,903201,Orinda,37.87847,-122.183643,79552,,,0,903209,,,1
+903209,903209,Orinda,37.878481,-122.183667,79552,,,1,,,,
+903202,903202,Orinda,37.878503,-122.183717,79552,,,0,903209,,,2
+903809,903809,Pittsburg / Bay Point,38.01891,-121.944236,79558,,,1,,,,
+903801,903801,Pittsburg / Bay Point,38.018881,-121.944249,79558,,,0,903809,,,1
+903802,903802,Pittsburg / Bay Point,38.01895,-121.944248,79558,,,0,903809,,,2
+908202,908202,Pittsburg Center,38.016873,-121.889011,79559,,,0,908209,,,2
+908209,908209,Pittsburg Center,38.016847,-121.889062,79559,,,1,,,,
+908201,908201,Pittsburg Center,38.016805,-121.889039,79559,,,0,908209,,,1
+SBRN_2,SBRN_2,"Plaza, Shopping Center Entrance / Exit",37.63774422,-122.4164137,79542,"Plaza, Shopping Center Entrance / Exit",,2,906309,,,
+903509,903509,Pleasant Hill / Contra Costa Centre,37.928434,-122.055971,79555,,,1,,,,
+903501,903501,Pleasant Hill / Contra Costa Centre,37.928414,-122.055954,79555,,,0,903509,,,1
+903502,903502,Pleasant Hill / Contra Costa Centre,37.928463,-122.056015,79555,,,0,903509,,,2
+901301,901301,Powell Street,37.784645,-122.407387,79571,,,0,901309,,,1
+901309,901309,Powell Street,37.784606,-122.407331,79571,,,1,,,,
+901302,901302,Powell Street,37.784576,-122.407302,79571,,,0,901309,,,2
+904609,904609,Richmond,37.936758,-122.353047,79583,,,1,,,,
+904601,904601,Richmond,37.936795,-122.353004,79583,,,0,904609,,,1
+904602,904602,Richmond,37.936731,-122.353117,79583,,,0,904609,,,2
+903101,903101,Rockridge,37.844725,-122.251225,79551,,,0,903109,,,1
+903102,903102,Rockridge,37.844795,-122.251271,79551,,,0,903109,,,2
+903109,903109,Rockridge,37.844755,-122.251235,79551,,,1,,,,
+906302,906302,San Bruno,37.637751,-122.416292,79589,,,0,906309,,,2
+906301,906301,San Bruno,37.63772,-122.416384,79589,,,0,906309,,,1
+906309,906309,San Bruno,37.63773,-122.416326,79589,,,1,,,,
+907102,907102,San Francisco International Airport,37.616091,-122.392049,79591,,,0,907109,,,2
+907103,907103,San Francisco International Airport,37.616023,-122.391895,79591,,,0,907109,,,3
+907101,907101,San Francisco International Airport,37.616189,-122.39196,79591,,,0,907109,,,1
+907109,907109,San Francisco International Airport,37.616091,-122.391954,79591,,,1,,,,
+902401,902401,San Leandro,37.721773,-122.160792,79545,,,0,902409,,,1
+902402,902402,San Leandro,37.721806,-122.160713,79545,,,0,902409,,,2
+902409,902409,San Leandro,37.721784,-122.16074,79545,,,1,,,,
+COLS_3,COLS_3,San Leandro Street Entrance / Exit,37.75394984,-122.1972864,79542,San Leandro Street Entrance / Exit,,2,902309,,,
+SFIA_1,SFIA_1,"SFIA Entrance / Exit, International Terminal, Level 3",37.61591605,-122.3926778,79542,"SFIA Entrance / Exit, International Terminal, Level 3",,2,907109,,,
+COLS_5,COLS_5,Snell St Entrance / Exit,37.75400252,-122.1967903,79542,Snell St Entrance / Exit,,2,902309,,,
+PLZA_3,PLZA_3,South Concourse Fairmont Entrance / Exit,37.90248558,-122.2988444,79542,South Concourse Fairmont Entrance / Exit,,2,904409,,,
+NBRK_2,NBRK_2,South Entrance / Exit,37.87385096,-122.283518,79542,South Entrance / Exit,,2,904309,,,
+BERY_3,BERY_3,South Entrance / Exit,37.3682021,-121.8745566,79542,South Entrance / Exit,,2,909509,,,
+902701,902701,South Hayward,37.634328,-122.057233,79548,,,0,902709,,,1
+902702,902702,South Hayward,37.634363,-122.057158,79548,,,0,902709,,,2
+902709,902709,South Hayward,37.63434,-122.057182,79548,,,1,,,,
+906201,906201,South San Francisco,37.664437,-122.444254,79588,,,0,906209,,,1
+906202,906202,South San Francisco,37.664497,-122.444193,79588,,,0,906209,,,2
+906209,906209,South San Francisco,37.664462,-122.444211,79588,,,1,,,,
+WOAK_2,WOAK_2,South Station Entrance / Exit,37.80489075,-122.2953887,79542,South Station Entrance / Exit,,2,901109,,,
+WARM_2,WARM_2,Station Elevator Entrance / Exit,37.50209781,-121.9388861,79542,Station Elevator Entrance / Exit,,2,909209,,,
+FRMT_3,FRMT_3,Station Entrance / Exit,37.55763262,-121.9764599,79542,Station Entrance / Exit,,2,902909,,,
+WDUB_2,WDUB_2,Stone Ridge Mall Rd. Entrance / Exit,37.69965853,-121.9283158,79542,Stone Ridge Mall Rd. Entrance / Exit,,2,905209,,,
+902802,902802,Union City,37.590765,-122.01723,79549,,,0,902809,,,2
+902809,902809,Union City,37.590735,-122.017248,79549,,,1,,,,
+902801,902801,Union City,37.590714,-122.017292,79549,,,0,902809,,,1
+903401,903401,Walnut Creek,37.90578,-122.067302,79554,,,0,903409,,,1
+903402,903402,Walnut Creek,37.905812,-122.067379,79554,,,0,903409,,,2
+903409,903409,Walnut Creek,37.905791,-122.067327,79554,,,1,,,,
+909209,909209,Warm Springs / South Fremont,37.502285,-121.939395,79584,,,1,,,,
+909202,909202,Warm Springs / South Fremont,37.502307,-121.939358,79584,,,0,909209,,,2
+909201,909201,Warm Springs / South Fremont,37.502274,-121.939459,79584,,,0,909209,,,1
+PLZA_1,PLZA_1,West Concourse Central Entrance / Exit,37.9026628,-122.2991376,79542,West Concourse Central Entrance / Exit,,2,904409,,,
+CONC_1,CONC_1,West Concourse Entrance / Exit,37.97360573,-122.0294061,79542,West Concourse Entrance / Exit,,2,903609,,,
+DELN_1,DELN_1,West Concourse Entrance / Exit,37.92526721,-122.3171462,79542,West Concourse Entrance / Exit,,2,904509,,,
+ROCK_1,ROCK_1,West Concourse Entrance / Exit,37.84445828,-122.2520238,79542,West Concourse Entrance / Exit,,2,903109,,,
+SSAN_2,SSAN_2,West Concourse Entrance / Exit,37.66409705,-122.4440629,79542,West Concourse Entrance / Exit,,2,906209,,,
+905201,905201,West Dublin / Pleasanton,37.699693,-121.92828,79566,,,0,905209,,,1
+905209,905209,West Dublin / Pleasanton,37.699721,-121.928277,79566,,,1,,,,
+905202,905202,West Dublin / Pleasanton,37.69976,-121.928301,79566,,,0,905209,,,2
+BAYF_2,BAYF_2,West Entrance / Exit,37.69687317,-122.1269896,79542,West Entrance / Exit,,2,902509,,,
+SANL_1,SANL_1,West Entrance / Exit,37.72144327,-122.160625,79542,West Entrance / Exit,,2,902409,,,
+COLM_1,COLM_1,West Entrance / Exit to Parking Garage,37.68447619,-122.4663618,79542,West Entrance / Exit to Parking Garage,,2,906109,,,
+901102,901102,West Oakland,37.804862,-122.295185,79568,,,0,901109,,,2
+901101,901101,West Oakland,37.804923,-122.295144,79568,,,0,901109,,,1
+901109,901109,West Oakland,37.804888,-122.295151,79568,,,1,,,,
+FRMT_2,FRMT_2,West Plaza Entrance / Exit,37.55740196,-121.9767141,79542,West Plaza Entrance / Exit,,2,902909,,,
+MLPT_1,MLPT_1,West Station Entrance / Exit,37.40995633,-121.8912231,79542,West Station Entrance / Exit,,2,909409,,,

@@ -1,0 +1,15 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color
+Orange-N,BA,Orange-N,Berryessa/North San Jose to Richmond,,1,https://www.bart.gov/schedules/bylineresults?route=3,FF9933,000000
+Orange-S,BA,Orange-S,Richmond to Berryessa/North San Jose,,1,https://www.bart.gov/schedules/bylineresults?route=4,FF9933,000000
+Green-S,BA,Green-S,Berryessa/North San Jose to Daly City,,1,https://www.bart.gov/schedules/bylineresults?route=5,339933,FFFFFF
+Red-N,BA,Red-N,"Millbrae/SF Int'l Airport SFO to Richmond",,1,https://www.bart.gov/schedules/bylineresults?route=8,FF0000,FFFFFF
+Blue-S,BA,Blue-S,Dublin/Pleasanton to Daly City,,1,https://www.bart.gov/schedules/bylineresults?route=11,0099CC,FFFFFF
+Grey-S,BA,Grey-S,"Coliseum to Oakland Int'l Airport OAK",,1,https://www.bart.gov/schedules/bylineresults?route=20,B0BEC7,000000
+Grey-N,BA,Grey-N,"Oakland Int'l Airport OAK to Coliseum",,1,https://www.bart.gov/schedules/bylineresults?route=19,B0BEC7,000000
+BridgeA,BA,BridgeA,Bus Bridge,,3,,000000,FFFFFF
+BridgeB,BA,BridgeB,Bus Bridge,,3,,000000,FFFFFF
+Yellow-S,BA,Yellow-S,"Antioch to SF Int'l Airport SFO/Millbrae",,1,https://www.bart.gov/schedules/bylineresults?route=1,FFFF33,000000
+Yellow-N,BA,Yellow-N,"Millbrae/SF Int'l SFO to Antioch",,1,https://www.bart.gov/schedules/bylineresults?route=2,FFFF33,000000
+Red-S,BA,Red-S,"Richmond to SF Int'l Airport SFO/Millbrae",,1,https://www.bart.gov/schedules/bylineresults?route=7,FF0000,FFFFFF
+Blue-N,BA,Blue-N,Daly City to Dublin/Pleasanton,,1,https://www.bart.gov/schedules/bylineresults?route=12,0099CC,FFFFFF
+Green-N,BA,Green-N,Daly City to Berryessa/North San Jose,,1,https://www.bart.gov/schedules/bylineresults?route=6,339933,FFFFFF

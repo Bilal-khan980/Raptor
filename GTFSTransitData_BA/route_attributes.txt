@@ -1,0 +1,15 @@
+route_id,category,subcategory,running_way
+Yellow-S,2,201,1
+Yellow-N,2,201,1
+Orange-N,2,201,1
+Orange-S,2,201,1
+Green-S,2,201,1
+Green-N,2,201,1
+Red-S,2,201,1
+Red-N,2,201,1
+Blue-S,2,201,1
+Blue-N,2,201,1
+Grey-N,3,301,1
+Grey-S,3,301,1
+Yellow-N,2,201,1
+Yellow-S,2,201,1

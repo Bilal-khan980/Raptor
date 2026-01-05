@@ -1,0 +1,14 @@
+route_id,direction_id,direction
+Orange-N,0,North
+Orange-S,1,South
+Green-S,1,South
+Red-N,0,North
+Blue-S,1,South
+Grey-S,1,South
+Grey-N,0,North
+Yellow-S,1,South
+Yellow-N,0,North
+Yellow-N,1,Outbound
+Red-S,1,South
+Blue-N,0,North
+Green-N,0,North

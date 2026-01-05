@@ -1,0 +1,13 @@
+service_id,service_description
+72953,Weekday
+72954,Saturday
+72955,Sunday
+75396,Weekday
+75397,Saturday
+75398,Sunday
+82069,Weekday
+82070,Saturday
+82071,Sunday
+82072,Weekday
+82073,Sunday
+82100,Sunday
