@@ -3,8 +3,8 @@ import json # for this purpose
 ## loading
 
 
-PATH_TO_GTFS_DIR = "C:/Users/bilal/Desktop/Raptor/RAPTORPython/GTFSTransitData_BA"
-PATH_TO_SAVE_RAPTOR_OBJECTS = "C:/Users/bilal/Desktop/Raptor/RAPTORPython/raptor_data.pkl"
+PATH_TO_GTFS_DIR = "C:/Users/bilal/Desktop/Raptor/Raptor/GTFSTransitData_BA"
+PATH_TO_SAVE_RAPTOR_OBJECTS = "C:/Users/bilal/Desktop/Raptor/Raptor/raptor_data.pkl"
 data = raptor.RAPTORData(PATH_TO_GTFS_DIR)
 data.readGTFS()
 data.saveToDisk(PATH_TO_SAVE_RAPTOR_OBJECTS)
