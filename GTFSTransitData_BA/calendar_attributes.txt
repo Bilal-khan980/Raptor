@@ -9,5 +9,11 @@ service_id,service_description
 82070,Saturday
 82071,Sunday
 82072,Weekday
-82073,Sunday
+82073,Saturday
 82100,Sunday
+82108,Weekday
+82109,Saturday
+82110,Sunday
+82111,Weekday
+82112,Saturday
+82113,Sunday

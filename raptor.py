@@ -4,6 +4,12 @@ import csv
 import bisect
 import pickle
 from datetime import timedelta
+import os
+import numpy as np
+try:
+    from scipy.spatial import KDTree
+except ImportError:
+    KDTree = None
 
 ## dirty hack
 class KeyifyList(object):
@@ -24,7 +30,10 @@ def stringHHMMSSToSeconds(time):
 def secondsToHHMMSSString(sec):
 	if (sec == float("inf")):
 		return "inf"
-	return str(timedelta(seconds=sec))
+	h = int(sec // 3600)
+	m = int((sec % 3600) // 60)
+	s = int(sec % 60)
+	return f"{h:02d}:{m:02d}:{s:02d}"
 
 # advanced classes to look up things faster
 
@@ -119,9 +128,12 @@ class DepartureLabel(object):
 
 # Now the main file
 class RAPTORData(object):
-	def __init__(self, directoryName):
+	def __init__(self, directoryNames):
 		super(RAPTORData, self).__init__()
-		self.directoryName = directoryName
+		if isinstance(directoryNames, str):
+			self.directoryNames = [directoryNames]
+		else:
+			self.directoryNames = directoryNames
 		self.rounds = []
 		self.earliestArrival = []
 		self.resultJourney = []
@@ -134,8 +146,10 @@ class RAPTORData(object):
 		self.stopsUpdatedByTransfer = None
 		self.stopsReached = None
 
+
 		## route contains routeId (from gtfs)
 		self.routes = []
+		self.gtfsRoutes = []
 
 		## stopSequenceOfRoute[i] is a list of stops (sorted by stop sequence)
 		self.stopSequenceOfRoute = []
@@ -155,6 +169,8 @@ class RAPTORData(object):
 		## stops, list of stopId (the gtfs stop id)
 		self.stops = []
 		self.stopNames = []
+		self.stopLats = []
+		self.stopLons = []
 		self.routesOperatingAtStops = []
 
 		self.collectedDepTimes = []
@@ -163,6 +179,15 @@ class RAPTORData(object):
 		self.tripMap = {}
 		self.tripOriginalRoute = {}
 		self.routeMap = {}
+		
+		## NEW: Shapes
+		self.shapes = {} # shape_id -> list of (lat, lon)
+		self.tripShapes = {} # trip_id (gtfs) -> shape_id
+		self.routeShapes = [] # internal route id -> shape_id
+		
+		## Spatial search
+		self.kdTree = None
+		self.stopCoordsArr = None
 
 	def numberOfRoutes(self):
 		return len(self.stopSequenceOfRoute)
@@ -179,6 +204,10 @@ class RAPTORData(object):
 			pickle.dump(self.routesOperatingAtStops, file)
 		with open(filename + '.stopNames', 'wb') as file:
 			pickle.dump(self.stopNames, file)
+		with open(filename + '.stopLats', 'wb') as file:
+			pickle.dump(self.stopLats, file)
+		with open(filename + '.stopLons', 'wb') as file:
+			pickle.dump(self.stopLons, file)
 		with open(filename + '.transfers', 'wb') as file:
 			pickle.dump(self.transfers, file)
 		with open(filename + '.routes', 'wb') as file:
@@ -195,6 +224,11 @@ class RAPTORData(object):
 			pickle.dump(self.stopSequenceOfRoute, file)
 		with open(filename + '.firstTripOfRoute', 'wb') as file:
 			pickle.dump(self.firstTripOfRoute, file)
+		# Save shapes
+		with open(filename + '.shapes', 'wb') as file:
+			pickle.dump(self.shapes, file)
+		with open(filename + '.routeShapes', 'wb') as file:
+			pickle.dump(self.routeShapes, file)
 
 	def loadFromDisk(self, filename):
 		with open(filename + '.routes', 'rb') as file:
@@ -205,6 +239,10 @@ class RAPTORData(object):
 			self.routesOperatingAtStops = pickle.load(file)
 		with open(filename + '.stopNames', 'rb') as file:
 			self.stopNames = pickle.load(file)
+		with open(filename + '.stopLats', 'rb') as file:
+			self.stopLats = pickle.load(file)
+		with open(filename + '.stopLons', 'rb') as file:
+			self.stopLons = pickle.load(file)
 		with open(filename + '.transfers', 'rb') as file:
 			self.transfers = pickle.load(file)
 		with open(filename + '.routes', 'rb') as file:
@@ -221,104 +259,254 @@ class RAPTORData(object):
 			self.stopSequenceOfRoute = pickle.load(file)
 		with open(filename + '.firstTripOfRoute', 'rb') as file:
 			self.firstTripOfRoute = pickle.load(file)
-	
+		# Load shapes
+		try:
+			with open(filename + '.shapes', 'rb') as file:
+				self.shapes = pickle.load(file)
+			with open(filename + '.routeShapes', 'rb') as file:
+				self.routeShapes = pickle.load(file)
+		except FileNotFoundError:
+			print("Shape data not found in cache. Please re-initialize.")
+		
+		self.buildSpatialIndex()
+
 	def readGTFS(self):
-		self.__readStops()
-		self.__readRoutes()
-		self.__readTrips()
-		self.__readTransfers()
-		self.__readStopTimes()
+		for dirName in self.directoryNames:
+			agency = os.path.basename(dirName)
+			if '_' in agency:
+				parts = agency.split('_')
+				if len(parts) > 1:
+					agency = parts[1]
+			
+			print(f"Reading GTFS from {dirName} (Agency: {agency})...")
+
+			self.__readStops(dirName, agency)
+			self.__readRoutes(dirName, agency)
+			self.__readShapes(dirName, agency)
+			self.__readTrips(dirName, agency)
+			self.__readTransfers(dirName, agency)
+			self.__readStopTimes(dirName, agency)
+		
+		# Post-processing: Sort trips in all routes
+		print("Sorting trips within routes...")
+		for route in range(self.numberOfRoutes()):
+			lowerTrip = self.getFirstTripOfRoute(route)
+			upperTrip = self.getLastTripOfRoute(route)
+			if lowerTrip < upperTrip and upperTrip <= len(self.stopEventsOfTrip):
+				copy = self.stopEventsOfTrip[lowerTrip:upperTrip][:]
+				copy.sort(key=lambda x: (x[0].depTime, x[0].arrTime))
+				self.stopEventsOfTrip[lowerTrip:upperTrip] = copy[:]
+
+		# Sort transfers
+		self.transfers.append(Transfer(float("inf"), float("inf"), float("inf")))
+		self.transfers.sort(key=lambda x: x.fromStopId)
+
+		# Build spatial index for nearby stop search
+		self.buildSpatialIndex()
+
+	def buildSpatialIndex(self):
+		print("Building spatial index for stops...")
+		if len(self.stopLats) == 0:
+			return
+		
+		# Convert to float array
+		lats = np.array(self.stopLats, dtype=float)
+		lons = np.array(self.stopLons, dtype=float)
+		self.stopCoordsArr = np.column_stack((lats, lons))
+		
+		if KDTree:
+			self.kdTree = KDTree(self.stopCoordsArr)
+		else:
+			print("Scipy KDTree not available, using simple numpy fallback.")
+
+	def findNearestStop(self, lat, lon, max_distance_km=2.0):
+		"""Finds the nearest stop within a certain distance."""
+		if self.stopCoordsArr is None:
+			return None
+		
+		query_pt = np.array([float(lat), float(lon)])
+		
+		if self.kdTree:
+			dist, idx = self.kdTree.query(query_pt)
+			# Dist is in degrees approx, let's just check raw distance for now
+			# A more accurate check would use Haversine, but KDTree query is fast
+			# 0.01 deg is ~1km
+			if dist < 0.1: # Loose check
+				return self.stops[idx]
+		else:
+			# Simple numpy fallback
+			dists = np.sum((self.stopCoordsArr - query_pt)**2, axis=1)
+			idx = np.argmin(dists)
+			return self.stops[idx]
+		
+		return None
+
+	def findStopsNear(self, lat, lon, radius_km=1.0, limit=5):
+		"""Finds multiple stops near a location."""
+		if self.stopCoordsArr is None:
+			return []
+		
+		query_pt = np.array([float(lat), float(lon)])
+		# Approx radius in degrees (1 degree lat ~= 111km, 1 degree lon ~= 111km * cos(lat))
+		# For small radii, this approximation is fine
+		radius_deg = radius_km / 111.0 # Very rough
+		
+		if self.kdTree:
+			indices = self.kdTree.query_ball_point(query_pt, radius_deg)
+			# Sort by distance
+			if not indices: return []
+			dists = np.sum((self.stopCoordsArr[indices] - query_pt)**2, axis=1)
+			sorted_indices = [indices[i] for i in np.argsort(dists)]
+			return [self.stops[i] for i in sorted_indices[:limit]]
+		else:
+			dists = np.sum((self.stopCoordsArr - query_pt)**2, axis=1)
+			mask = dists < (radius_deg**2)
+			indices = np.where(mask)[0]
+			if len(indices) == 0: return []
+			sorted_indices = indices[np.argsort(dists[indices])]
+			return [self.stops[i] for i in sorted_indices[:limit]]
 
 
-	def __readStops(self):
-		with open(self.directoryName + "/stops.txt", "r", encoding="utf-8") as csvFile:
+	def __readShapes(self, dirName, agency):
+		print(f"Reading shapes.txt for {agency}...")
+		try:
+			with open(dirName + "/shapes.txt", "r", encoding="utf-8") as csvFile:
+				reader = csv.reader(csvFile, skipinitialspace=True)
+				header = next(reader)
+				try:
+					shapeIdIndex = header.index("shape_id")
+					latIndex = header.index("shape_pt_lat")
+					lonIndex = header.index("shape_pt_lon")
+					seqIndex = header.index("shape_pt_sequence")
+				except ValueError:
+					print("shapes.txt missing required columns")
+					return
+
+				# Read all points
+				temp_shapes = {} # id -> list of (seq, lat, lon)
+				for line in reader:
+					shape_id = agency + ":" + line[shapeIdIndex]
+					lat = float(line[latIndex])
+					lon = float(line[lonIndex])
+					seq = int(line[seqIndex])
+					
+					if shape_id not in temp_shapes:
+						temp_shapes[shape_id] = []
+					temp_shapes[shape_id].append((seq, lat, lon))
+				
+				# Sort and store
+				for shape_id, points in temp_shapes.items():
+					points.sort(key=lambda x: x[0])
+					self.shapes[shape_id] = [(p[1], p[2]) for p in points]
+		except FileNotFoundError:
+			print(f"shapes.txt not found for {agency}, shapes will not be available.")
+
+	def __readStops(self, dirName, agency):
+		with open(dirName + "/stops.txt", "r", encoding="utf-8") as csvFile:
 			reader = csv.reader(csvFile, skipinitialspace=True)
 			
 			stopIdIndex = -1
 			stopNameIndex = -1
-			currentIndex = 0
+			stopLatIndex = -1
+			stopLonIndex = -1
+			currentIndex = len(self.stops) # Append to existing
 
 			for line in reader:
 				if (stopIdIndex == -1):
 					stopIdIndex = line.index("stop_id")
 					stopNameIndex = line.index("stop_name")
+					stopLatIndex = line.index("stop_lat")
+					stopLonIndex = line.index("stop_lon")
 				else:
-					self.stopMap[line[stopIdIndex]] = currentIndex
-					self.stops.append(line[stopIdIndex])
+					stop_id = agency + ":" + line[stopIdIndex]
+					self.stopMap[stop_id] = currentIndex
+					self.stops.append(stop_id)
 					self.stopNames.append(line[stopNameIndex])
+					self.stopLats.append(line[stopLatIndex])
+					self.stopLons.append(line[stopLonIndex])
 					self.routesOperatingAtStops.append([])
 					currentIndex += 1
 
-	def __readTransfers(self):
-		with open(self.directoryName + "/transfers.txt", "r", encoding="utf-8") as csvFile:
-			reader = csv.reader(csvFile, skipinitialspace=True)
-			
-			fromStopIdIndex = -1
-			toStopIdIndex = -1
-			durationIndex = -1
-			transferTypeIndex = -1
+	def __readTransfers(self, dirName, agency):
+		try:
+			with open(dirName + "/transfers.txt", "r", encoding="utf-8") as csvFile:
+				reader = csv.reader(csvFile, skipinitialspace=True)
+				
+				fromStopIdIndex = -1
+				toStopIdIndex = -1
+				durationIndex = -1
+				transferTypeIndex = -1
 
-			for line in reader:
-				if (fromStopIdIndex == -1):
-					fromStopIdIndex = line.index("from_stop_id")
-					toStopIdIndex = line.index("to_stop_id")
-					durationIndex = line.index("min_transfer_time")
-					transferTypeIndex = line.index("transfer_type")
-				else:
-					if (int(line[transferTypeIndex]) == 2):
-						self.transfers.append(Transfer(self.stopMap[line[fromStopIdIndex]], self.stopMap[line[toStopIdIndex]], int(line[durationIndex])))
+				for line in reader:
+					if (fromStopIdIndex == -1):
+						fromStopIdIndex = line.index("from_stop_id")
+						toStopIdIndex = line.index("to_stop_id")
+						durationIndex = line.index("min_transfer_time")
+						transferTypeIndex = line.index("transfer_type")
+					else:
+						if (int(line[transferTypeIndex]) == 2):
+							fromStop = agency + ":" + line[fromStopIdIndex]
+							toStop = agency + ":" + line[toStopIdIndex]
+							if fromStop in self.stopMap and toStop in self.stopMap:
+								self.transfers.append(Transfer(self.stopMap[fromStop], self.stopMap[toStop], int(line[durationIndex])))
+		except FileNotFoundError:
+			print(f"transfers.txt not found for {agency}, skipping transfers.")
 
-		self.transfers.append(Transfer(float("inf"), float("inf"), float("inf")))
-
-		self.transfers.sort(key=lambda x: x.fromStopId)
-
-	def __readRoutes(self):
-		with open(self.directoryName + "/routes.txt", "r", encoding="utf-8") as csvFile:
+	def __readRoutes(self, dirName, agency):
+		with open(dirName + "/routes.txt", "r", encoding="utf-8") as csvFile:
 			reader = csv.reader(csvFile, skipinitialspace=True)
 			
 			routeIdIndex = -1
 
-			currentIndex = 0
+			currentIndex = len(self.gtfsRoutes)
 
 			for line in reader:
 				if (routeIdIndex == -1):
 					routeIdIndex = line.index("route_id")
 				else:
-					self.routes.append(line[routeIdIndex])
-					self.routeMap[line[routeIdIndex]] = currentIndex
+					rid = agency + ":" + line[routeIdIndex]
+					self.gtfsRoutes.append(rid)
+					self.routeMap[rid] = currentIndex
 
 					currentIndex += 1
 
-	def __readTrips(self):
-		with open(self.directoryName + "/trips.txt", "r", encoding="utf-8") as csvFile:
+	def __readTrips(self, dirName, agency):
+		with open(dirName + "/trips.txt", "r", encoding="utf-8") as csvFile:
 			reader = csv.reader(csvFile, skipinitialspace=True)
 
 			routeIdIndex = -1
 			tripIdIndex = -1
+			shapeIdIndex = -1
 			
 			for line in reader:
 				if (routeIdIndex == -1):
 					routeIdIndex = line.index("route_id")
 					tripIdIndex = line.index("trip_id")
+					try:
+						shapeIdIndex = line.index("shape_id")
+					except:
+						pass
 				else:
-					self.tripOriginalRoute[line[tripIdIndex]] = self.routeMap[line[routeIdIndex]]
+					trip_id = agency + ":" + line[tripIdIndex]
+					route_id = agency + ":" + line[routeIdIndex]
+					
+					if route_id in self.routeMap:
+						self.tripOriginalRoute[trip_id] = self.routeMap[route_id]
+						if shapeIdIndex != -1:
+							self.tripShapes[trip_id] = agency + ":" + line[shapeIdIndex]
 
-	def __readStopTimes(self):
-		## we need that map to map trips with same stopsequence 
+	def __readStopTimes(self, dirName, agency):
 		stopSequenceMap = {}
 
-		with open(self.directoryName + "/stop_times.txt", "r", encoding="utf-8") as csvFile:
+		with open(dirName + "/stop_times.txt", "r", encoding="utf-8") as csvFile:
 			reader = csv.reader(csvFile, skipinitialspace=True)
 			
 			tripIdIndex = -1
 			stopIdIndex = -1
-			arrTimeIndex = -1
-			depTimeIndex = -1
 
 			lastTripId = ""
 
 			currentTripIndex = 0
-
 			currentStopSeq = []
 
 			for line in reader:
@@ -326,45 +514,63 @@ class RAPTORData(object):
 					tripIdIndex = line.index("trip_id")
 					stopIdIndex = line.index("stop_id")
 				else:
-					currentTrip = line[tripIdIndex]
-					currentStopId = line[stopIdIndex]
+					currentTrip = agency + ":" + line[tripIdIndex]
+					currentStopId = agency + ":" + line[stopIdIndex]
+
+					if currentStopId not in self.stopMap:
+						continue
 
 					if (lastTripId == currentTrip):
-						# same trip => add to stopSequence
 						currentStopSeq.append(self.stopMap[currentStopId])
 					else:
-						# edge case for the beginning
 						if (lastTripId == ""):
 							lastTripId = currentTrip
 						else:
-							# if the stopsequence is already in the map, add trip to the new "route"
 							if (tuple(currentStopSeq) in stopSequenceMap.keys()):
 								stopSequenceMap[tuple(currentStopSeq)].append(lastTripId)
 							else:
 								stopSequenceMap[tuple(currentStopSeq)] = [lastTripId]
-							# clear
 							currentStopSeq = []
 							lastTripId = currentTrip
 							currentTripIndex += 1
-			# add last stopSequence
+			# last one
 			if (tuple(currentStopSeq) in stopSequenceMap.keys()):
 				stopSequenceMap[tuple(currentStopSeq)].append(lastTripId)
 			else:
 				stopSequenceMap[tuple(currentStopSeq)] = [lastTripId]
 			
-			## now that we collected all the "same" trips into routes, we need to add the route ids
-			self.trips = [0 for _ in range(currentTripIndex+1)]
-			self.firstTripOfRoute = [0 for _ in range(len(list(stopSequenceMap.keys()))+1)]
+			if self.firstTripOfRoute:
+				self.firstTripOfRoute.pop()
 
-			routeId = 0
-			tripIndex = 0
-			newRouteIds = []
+			routeId = len(self.stopSequenceOfRoute)
+			tripIndex = len(self.trips)
+			
+			# Grow arrays
+			self.trips.extend([0 for _ in range(currentTripIndex+1)])
+			self.firstTripOfRoute.extend([0 for _ in range(len(stopSequenceMap) + 1)])
+			self.routeShapes.extend([None for _ in range(len(stopSequenceMap))])
+
 			for key in stopSequenceMap:
 				self.firstTripOfRoute[routeId] = tripIndex
 				stopSeq = list(key)
 				for i, stop in enumerate(stopSeq):
-					self.routesOperatingAtStops[stop].append((routeId, i))
-				newRouteIds.append(self.routes[self.tripOriginalRoute[stopSequenceMap[key][0]]])
+					if stop < len(self.routesOperatingAtStops):
+						self.routesOperatingAtStops[stop].append((routeId, i))
+				
+				first_trip = stopSequenceMap[key][0]
+				if first_trip in self.tripOriginalRoute:
+					# Map back to GTFS Route ID string using gtfsRoutes
+					if self.tripOriginalRoute[first_trip] < len(self.gtfsRoutes):
+						self.routes.append(self.gtfsRoutes[self.tripOriginalRoute[first_trip]])
+					else:
+						# Should not happen
+						self.routes.append("UNKNOWN_ROUTE")
+				else:
+					self.routes.append("UNKNOWN")
+				
+				if first_trip in self.tripShapes:
+					self.routeShapes[routeId] = self.tripShapes[first_trip]
+
 				for tripId in stopSequenceMap[key]:
 					self.trips[tripIndex] = routeId
 					self.tripMap[tripId] = tripIndex 
@@ -373,12 +579,12 @@ class RAPTORData(object):
 				routeId += 1
 			# sentinel
 			self.firstTripOfRoute[routeId] = tripIndex
-			self.routes = newRouteIds[:]
 
-		with open(self.directoryName + "/stop_times.txt", "r", encoding="utf-8") as csvFile:
+		with open(dirName + "/stop_times.txt", "r", encoding="utf-8") as csvFile:
 			reader = csv.reader(csvFile, skipinitialspace=True)
 
-			self.stopEventsOfTrip = [[] for _ in range(currentTripIndex+1)]
+			# Extend stop events
+			self.stopEventsOfTrip.extend([[] for _ in range(currentTripIndex+1)])
 
 			tripIdIndex = -1
 			arrTimeIndex = -1
@@ -390,19 +596,15 @@ class RAPTORData(object):
 					arrTimeIndex = line.index("arrival_time")
 					depTimeIndex = line.index("departure_time")
 				else:
-					currentTrip = line[tripIdIndex]
+					currentTrip = agency + ":" + line[tripIdIndex]
 					currentArrTime = line[arrTimeIndex]
 					currentDepTime = line[depTimeIndex]
 
-					self.stopEventsOfTrip[self.tripMap[currentTrip]].append(StopEvent(stringHHMMSSToSeconds(currentDepTime), stringHHMMSSToSeconds(currentArrTime)))
+					if currentTrip in self.tripMap:
+						idx = self.tripMap[currentTrip]
+						self.stopEventsOfTrip[idx].append(StopEvent(stringHHMMSSToSeconds(currentDepTime), stringHHMMSSToSeconds(currentArrTime)))
 
-		for route in range(self.numberOfRoutes()):
-			# sort all trips of route by depTime and then arrTime
-			lowerTrip = self.getFirstTripOfRoute(route)
-			upperTrip = self.getLastTripOfRoute(route)
-			copy = self.stopEventsOfTrip[lowerTrip:upperTrip][:]
-			copy.sort(key=lambda x: (x[0].depTime, x[0].arrTime))
-			self.stopEventsOfTrip[lowerTrip:upperTrip] = copy[:]
+		# We sort trips at the end of readGTFS now
 
 	## Helper
 	def getFirstTripOfRoute(self, route):
@@ -554,15 +756,72 @@ class RAPTORData(object):
 			journeys[i] = self.getJourney(i, self.target)
 		return journeys
 
+	def get_sliced_shape(self, shape_id, from_lat, from_lon, to_lat, to_lon):
+		if not shape_id or shape_id not in self.shapes:
+			return []
+		
+		full_shape = self.shapes[shape_id]
+		if not full_shape:
+			return []
+
+		# Find closest point indices
+		# Simple Euclidean distance is sufficient for finding the closest point in this context
+		def dist_sq(p1, lat, lon):
+			return (p1[0] - lat)**2 + (p1[1] - lon)**2
+		
+		start_idx = 0
+		min_start_dist = float('inf')
+		
+		end_idx = len(full_shape) - 1
+		min_end_dist = float('inf')
+
+		# Optimization: assume shapes are relatively sequential. But stops might be far from shape points if data is bad.
+		# We'll just scan all for correctness.
+		for i, pt in enumerate(full_shape):
+			d_start = dist_sq(pt, from_lat, from_lon)
+			if d_start < min_start_dist:
+				min_start_dist = d_start
+				start_idx = i
+			
+			d_end = dist_sq(pt, to_lat, to_lon)
+			if d_end < min_end_dist:
+				min_end_dist = d_end
+				end_idx = i
+		
+		# If start is after end (wrong direction), swap or handle?
+		# Transit shapes are directional. If start > end, it's problematic or wrapped. 
+		# But we know the stops are ordered.
+		if start_idx <= end_idx:
+			return full_shape[start_idx : end_idx + 1]
+		else:
+			# If found indices are reversed, it implies either we matched wrong points or the shape loop is weird.
+			# But RAPTOR guarantees we move forward in time/stops. 
+			# In a loop, it might happen. For now, let's just return the segment as is if valid? No, if start > end this returns empty.
+			# Let's try to assume we just want the path between them.
+			return []
+
 	def transformEAToJourney(self, ea, currentStop):
 		j = {
 			"DepartureTime": secondsToHHMMSSString(ea.parentDepTime),
 			"ArrivalTime": secondsToHHMMSSString(ea.arrTime),
 			"FromStop": str(self.stopNames[ea.parent]),
-			"ToStop": str(self.stopNames[currentStop])
+			"FromStopId": str(self.stops[ea.parent]),
+			"FromStopCoords": {"lat": self.stopLats[ea.parent], "lon": self.stopLons[ea.parent]},
+			"ToStop": str(self.stopNames[currentStop]),
+			"ToStopId": str(self.stops[currentStop]),
+			"ToStopCoords": {"lat": self.stopLats[currentStop], "lon": self.stopLons[currentStop]}
 		}
 		if (ea.usesRoute):
 			j["RouteId"] = self.routes[ea.routeId]
+			# Shape Logic
+			shape_id = self.routeShapes[ea.routeId]
+			if shape_id:
+				from_lat = float(self.stopLats[ea.parent])
+				from_lon = float(self.stopLons[ea.parent])
+				to_lat = float(self.stopLats[currentStop])
+				to_lon = float(self.stopLons[currentStop])
+				
+				j["Shape"] = self.get_sliced_shape(shape_id, from_lat, from_lon, to_lat, to_lon)
 		return j
 
 	def getJourney(self, roundIndex, stop):
@@ -570,7 +829,7 @@ class RAPTORData(object):
 			return []
 
 		currentStop = stop
-		ea = self.rounds[roundIndex][currentStop]
+		ea = self.rounds[roundIndex][stop]
 
 		journey = []
 		journey.append(self.transformEAToJourney(ea, currentStop))
@@ -586,83 +845,3 @@ class RAPTORData(object):
 			currentStop = ea.parent
 		return journey[::-1]
 
-	## range query
-
-	def findDurationOfTransfer(self, fromStopId, toStopId):
-		for transfer in self.transfers[self.firstTransferOfStop(fromStopId):self.lastTransferOfStop(toStopId)]:
-			if (transfer.toStopId == toStopId):
-				return transfer.duration
-		return float("inf")
-
-	def addDepartureLabel(self, stop, depTime):
-		self.currentRound()[stop].depTime = depTime
-		self.currentRound()[stop].parent = self.source
-		self.currentRound()[stop].usesRoute = False
-		self.currentRound()[stop].parentDepTime = self.sourceDepTime
-		self.currentRound()[stop].routeId = None
-
-	def run(self, sourceGTFSId, targetGTFSId, earliestDepTime, latestDepTime):
-		self.source = self.stopMap[sourceGTFSId]
-		self.target = self.stopMap[targetGTFSId]
-		self.earliestDepTime = earliestDepTime
-		self.latestDepTime = latestDepTime
-
-		self.sourceDepTime = 0
-		self.resultJourney = []
-
-		self.collectDepartureTimes()
-		
-		maxRounds = 16
-		i = 0
-		while (i < len(self.collectedDepTimes)):
-			self.sourceDepTime = self.collectedDepTimes[i].depTime
-			self.initialize(True)
-
-			self.stopsReached.clear()
-
-			transferTime = self.findDurationOfTransfer(self.source, self.collectedDepTimes[i].stop)
-			if (self.collectedDepTimes[i].stop == self.source):
-				transferTime = 0
-			self.addDepartureLabel(self.collectedDepTimes[i].stop, self.collectedDepTimes[i].depTime + transferTime)
-
-			while (i+1 < len(self.collectedDepTimes) and self.collectedDepTimes[i].depTime == self.collectedDepTimes[i+1].depTime):
-				transferTime = self.findDurationOfTransfer(self.source, self.collectedDepTimes[i].stop)
-				if (self.collectedDepTimes[i].stop == self.source):
-					transferTime = 0
-				self.addDepartureLabel(self.collectedDepTimes[i].stop, self.collectedDepTimes[i].depTime + transferTime)
-				i += 1
-			i += 1
-
-			k = 0
-			while (k < maxRounds and not self.stopsUpdated.isEmpty()):
-				self.relaxTransfers()
-
-				self.startNewRound()
-
-				# collect all routes
-				self.collectRoutesServingUpdatedStops()
-
-				# scan all route collected earlier
-				self.scanRoutes()
-				k += 1
-
-			if (self.stopsReached.contains(self.target)):
-				self.resultJourney.append(self.getAllJourneys())
-		return self.resultJourney
-			
-
-	def collectDepartureTimes(self):
-		self.collectedDepTimes = []
-
-		for route in range(self.numberOfRoutes()):
-			for trip in self.stopEventsOfTrip[self.getFirstTripOfRoute(route):self.getLastTripOfRoute(route)]:
-				for stopSeq, stop in enumerate(self.stopSequenceOfRoute[route]):
-					if (stopSeq + 1 == len(self.stopSequenceOfRoute[route])):
-						continue
-					if (trip[stopSeq].depTime < self.earliestDepTime or trip[stopSeq].depTime > self.latestDepTime):
-						continue
-					transferTime = self.findDurationOfTransfer(stop, self.source)
-					if (stop == self.source or transferTime < float("inf")):
-						# find all depTime in range [self.earliestDepTime, self.latestDepTime]
-						self.collectedDepTimes.append(DepartureLabel(trip[stopSeq].depTime, stop))
-		self.collectedDepTimes.sort(key=lambda x : x.depTime, reverse=True)

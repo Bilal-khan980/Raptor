@@ -1,0 +1,37 @@
+# Big Folders
+**/node_modules/
+**/dist/
+**/build/
+**/.idea/
+**/.vscode/
+**/__pycache__/
+
+# Data Files and Folders (GTFS and RAPTOR data)
+**/GTFSTransitData_*/
+**/raptor_data.pkl.*
+*.pkl
+*.sqlite
+*.db
+*.csv
+*.json
+!package.json
+!tsconfig.json
+!composer.json
+
+# Compressed files
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+
+# Environment and OS
+.env
+.venv/
+env/
+venv/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
