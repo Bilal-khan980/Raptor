@@ -91,31 +91,32 @@ class RaptorRouter:
         
         # De-duplicate departure times to avoid redundant queries
         unique_start_times = sorted(list(set([o[0] for o in opportunities])))
-        # Also always include the very first possible departure
-        if not unique_start_times or unique_start_times[0] > start_time_seconds:
-             unique_start_times.insert(0, start_time_seconds)
-
+        
+        # If no trips in exact window, we'll try the very next departure ONLY IF the window is empty
+        # but the user requested strict windowing, so let's stick to the window.
+        
         all_results = []
         seen_journeys = set() # (tuple of trip_ids)
+        window_end = start_time_seconds + window
 
         for dep_t in unique_start_times:
             res = self.query(source_stop_id, target_stop_id, dep_t)
             for j in res['journeys']:
+                # The first leg's departure must be within our window
+                first_leg_dep = j['legs'][0]['departure_time']
+                if first_leg_dep > window_end:
+                    continue
+
                 # Create a signature for the journey to de-duplicate
-                # We use (departure_time, arrival_time, transfers, trip_sequence)
                 trip_sig = tuple(leg.get('trip_id') or 'walk' for leg in j['legs'])
-                full_sig = (j['legs'][0]['departure_time'], j['arrival_time'], trip_sig)
+                full_sig = (first_leg_dep, j['arrival_time'], trip_sig)
                 
                 if full_sig not in seen_journeys:
                     all_results.append(j)
                     seen_journeys.add(full_sig)
 
-        # Final Pareto Filtering: (DepTime, ArrTime, Transfers)
-        # For multi-option view, we want to KEEP a journey if there is no journey that:
-        # Starts LATER and Arrives EARLIER with LESS transfers.
-        # But usually just showing all distinct starting trips is what users want.
+        # Final sort by departure time
         all_results.sort(key=lambda x: x['legs'][0]['departure_time'])
-        
         return {'journeys': all_results}
 
     def query(self, source_stop_id, target_stop_id, departure_time_seconds):

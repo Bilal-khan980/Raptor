@@ -397,17 +397,28 @@ function App() {
 
         <div className="journey-list">
           {journeys && journeys.map((journey, idx) => {
-            const startTime = journey[0]?.DepartureTime;
-            const endTime = journey[journey.length-1]?.ArrivalTime;
+            const startTimeString = journey[0]?.DepartureTime;
+            const endTimeString = journey[journey.length-1]?.ArrivalTime;
             const isActive = idx === selectedJourneyIndex;
-            const transferCount = journey.filter(step => step.RouteId).length - 1;
+            const transitLegs = journey.filter(step => step.RouteId);
+            const transferCount = transitLegs.length - 1;
 
-            // Total Duration Calculation
+            // Total Duration Calculation with Midnight Wrap Fix
             const parseToSec = (t) => {
+                if (!t) return 0;
                 const [h, m, s] = t.split(':').map(Number);
-                return h * 3600 + m * 60 + s;
+                return h * 3600 + m * (60) + (s || 0);
             };
-            const totalSec = parseToSec(endTime) - parseToSec(startTime);
+            
+            let startSec = parseToSec(startTimeString);
+            let endSec = parseToSec(endTimeString);
+            
+            // If arrival is earlier than departure, it crossed midnight
+            if (endSec < startSec) {
+                endSec += 86400; // Add 24 hours
+            }
+            
+            const totalSec = endSec - startSec;
             const durationMin = Math.round(totalSec / 60);
             
             return (
@@ -415,72 +426,114 @@ function App() {
                 key={idx}
                 className={`journey-card ${isActive ? 'active' : ''}`}
                 onClick={() => setSelectedJourneyIndex(idx)}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ delay: idx * 0.04 }}
               >
-                <div className="journey-header">
-                  <div className="journey-time">
-                    {startTime?.slice(0,5)} <span style={{fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle', margin: '0 4px'}}>→</span> {endTime?.slice(0,5)}
+                <div className="journey-card-inner">
+                  <div className="journey-summary-main">
+                    {/* Time & Duration Row */}
+                    <div className="summary-header">
+                       <div className="time-range">
+                          <span className="t-start">{startTimeString?.slice(0,5)}</span>
+                          <div className="t-arrow">→</div>
+                          <span className="t-end">{endTimeString?.slice(0,5)}</span>
+                       </div>
+                       <div className="duration-pill">{durationMin} min</div>
+                    </div>
+
+                    {/* From/To Node Preview */}
+                    <div className="summary-locations">
+                        <div className="loc-node">
+                            <div className="loc-marker origin"></div>
+                            <span className="loc-name">{journey[0].FromStop}</span>
+                        </div>
+                        <div className="loc-node">
+                            <div className="loc-marker destination"></div>
+                            <span className="loc-name">{journey[journey.length-1].ToStop}</span>
+                        </div>
+                    </div>
                   </div>
-                  <div className="journey-meta">
-                    <div className="journey-duration">{durationMin} min</div>
-                    <div className="journey-transfers">
+                  
+                  <div className="journey-route-preview">
+                    {transitLegs.map((step, sIdx) => (
+                        <React.Fragment key={sIdx}>
+                            <div className="route-pill">
+                                <span className="route-code">{step.RouteId}</span>
+                                <span className="agency-code">{step.ToStopId.split(':')[0]}</span>
+                            </div>
+                            {sIdx < transitLegs.length - 1 && <div className="transfer-dot"></div>}
+                        </React.Fragment>
+                    ))}
+                    <div className="transfer-summary">
                         {transferCount === 0 ? 'Direct' : `${transferCount} Transfer${transferCount > 1 ? 's' : ''}`}
                     </div>
                   </div>
-                </div>
-                
-                <div className="journey-legs-simple">
-                  {journey.map((step, sIdx) => {
-                      if (step.RouteId) {
-                          return (
-                            <div key={sIdx} className="leg-badge transit">
-                                <span className="leg-route">{step.RouteId}</span>
-                            </div>
-                          );
-                      }
-                      return null;
-                  })}
                 </div>
 
                 <AnimatePresence>
                   {isActive && (
                     <motion.div 
-                        className="journey-details"
+                        className="journey-details-drawer"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                     >
-                        {journey.map((step, sIdx) => (
-                            <div key={sIdx} className="detail-row">
-                                <div className="detail-marker"></div>
-                                <div className="detail-content">
-                                    <div className="detail-path">
-                                        <span>Board {step.FromStop}</span>
-                                        <span className="time">{step.DepartureTime.slice(0,5)}</span>
+                        <div className="details-scroll-content">
+                            {journey.map((step, sIdx) => (
+                                <div key={sIdx} className="itinerary-node">
+                                    {/* The Stop Point */}
+                                    <div className="node-marker-row">
+                                        <div className="node-time">{step.DepartureTime.slice(0,5)}</div>
+                                        <div className="node-connector">
+                                            <div className={`node-dot ${sIdx === 0 ? 'origin' : 'transfer'}`}></div>
+                                            <div className="node-line-down"></div>
+                                        </div>
+                                        <div className="node-stop-name">{step.FromStop}</div>
                                     </div>
-                                    
-                                    <div className={`detail-leg ${step.RouteId ? 'transit' : 'walk'}`}>
-                                        <div className="leg-info">
-                                            {step.RouteId ? (
-                                                <>
-                                                    <span className="route-name">{step.RouteId} ({step.ToStopId.split(':')[0]})</span>
-                                                    <span className="trip-id">Trip: {step.RouteLongId}</span>
-                                                </>
-                                            ) : (
-                                                <span className="walk-info">Transfer / Walking</span>
-                                            )}
+
+                                    {/* The Leg Content (Transit/Walk) */}
+                                    <div className="node-leg-row">
+                                        <div className="node-time-spacer"></div>
+                                        <div className="node-connector-spacer">
+                                            <div className={`leg-line-visual ${step.RouteId ? 'transit' : 'walk'}`}></div>
+                                        </div>
+                                        <div className="node-leg-card">
+                                            <div className="leg-main">
+                                                <div className="leg-icon">
+                                                    {step.RouteId ? (
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M6 20l-1 2M19 20l1 2M4 12h16M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                                    ) : (
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 4v2M13 18v2M12 9l-4 4 4 4"/></svg>
+                                                    )}
+                                                </div>
+                                                <div className="leg-info-group">
+                                                    <div className="leg-title">
+                                                        {step.RouteId ? `${step.RouteId} to ${step.ToStop}` : `Walk to ${step.ToStop}`}
+                                                    </div>
+                                                    {step.RouteId && (
+                                                        <div className="leg-subtitle">
+                                                            {step.ToStopId.split(':')[0]} Agency • Trip #{step.RouteLongId.split(':').pop()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="detail-path end">
-                                        <span>Alight {step.ToStop}</span>
-                                        <span className="time">{step.ArrivalTime.slice(0,5)}</span>
-                                    </div>
+                                    {/* Final Exit Node for the very last step */}
+                                    {sIdx === journey.length - 1 && (
+                                        <div className="node-marker-row exit">
+                                            <div className="node-time">{step.ArrivalTime.slice(0,5)}</div>
+                                            <div className="node-connector">
+                                                <div className="node-dot destination"></div>
+                                            </div>
+                                            <div className="node-stop-name">{step.ToStop}</div>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

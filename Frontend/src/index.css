@@ -159,43 +159,140 @@ label {
 }
 
 /* Checkbox & Filter Row */
-.filter-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0 24px 0;
-  padding: 0 4px;
+.journey-card-inner {
+  padding: 24px;
 }
 
-.checkbox-label {
+.journey-summary-main {
+  margin-bottom: 24px;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.time-range {
   display: flex;
   align-items: center;
   gap: 12px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  color: #999;
+}
+
+.t-start, .t-end {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.t-arrow {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.duration-pill {
+  background: rgba(79, 172, 254, 0.15);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  color: #4facfe;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.summary-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loc-node {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loc-marker {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.loc-marker.origin {
+  background: #4facfe;
+  box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+
+.loc-marker.destination {
+  background: #00f2fe;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+}
+
+.loc-name {
+  font-size: 0.85rem;
   font-weight: 600;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.checkbox-label input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #4facfe;
+.journey-route-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
 }
 
-.num-input {
-  width: 50px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  font-size: 0.8rem;
-  text-align: center;
+.route-pill {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-/* Buttons */
+.route-code {
+  background: #4facfe;
+  color: #000;
+  padding: 2px 8px;
+  font-weight: 800;
+  font-size: 0.7rem;
+}
+
+.agency-code {
+  padding: 2px 6px;
+  color: #888;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.transfer-dot {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+}
+
+.transfer-summary {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .search-button {
   cursor: pointer;
   background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
@@ -266,195 +363,179 @@ label {
 }
 
 .journey-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
-  padding: 24px;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   overflow: hidden;
+  margin-bottom: 2px;
 }
 
 .journey-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-  transform: translateX(6px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .journey-card.active {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.05) 100%);
-  border-color: rgba(79, 172, 254, 0.6);
+  background: rgba(79, 172, 254, 0.05);
+  border-color: #4facfe;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
-.journey-card.active::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0; bottom: 0; width: 6px;
-  background: linear-gradient(to bottom, #00f2fe, #4facfe);
-  border-radius: 0 4px 4px 0;
+.journey-card-inner {
+  padding: 20px 24px;
 }
 
-.journey-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.journey-time {
-  font-weight: 900;
-  color: #fff;
-  font-size: 1.4rem;
-  letter-spacing: -0.03em;
-}
-
-.journey-meta {
-  text-align: right;
-}
-
-.journey-duration {
-  font-size: 0.75rem;
-  color: #4facfe;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.journey-transfers {
-  font-size: 0.65rem;
-  color: #555;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.journey-legs-simple {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.leg-badge {
-  font-size: 0.65rem;
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-weight: 800;
-  border: 1px solid transparent;
-}
-
-.leg-badge.transit {
-  background: rgba(79, 172, 254, 0.15);
-  color: #4facfe;
-  border-color: rgba(79, 172, 254, 0.2);
-}
-
-.leg-badge.walk {
-  background: rgba(255, 255, 255, 0.05);
-  color: #666;
-  border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Journey Details Expansion */
-.journey-details {
-    margin-top: 24px;
-    padding-top: 24px;
+/* Node-Based Itinerary (Professional Overhaul) */
+.journey-details-drawer {
+    background: rgba(0, 0, 0, 0.4);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .details-scroll-content {
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 0;
-}
-
-.detail-row {
+  }
+  
+  .itinerary-node {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .node-marker-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 24px;
+  }
+  
+  .node-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    width: 45px;
+    text-align: right;
+  }
+  
+  .node-connector {
+    width: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    min-height: 24px;
+  }
+  
+  .node-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #000;
+    border: 2px solid #4facfe;
+    z-index: 2;
+  }
+  
+  .node-dot.origin { background: #4facfe; box-shadow: 0 0 8px #4facfe; }
+  .node-dot.transfer { border-color: #888; }
+  .node-dot.destination { background: #00f2fe; border-color: #00f2fe; box-shadow: 0 0 8px #00f2fe; }
+  
+  .node-line-down {
+    width: 2px;
+    flex-grow: 1;
+    background: rgba(255, 255, 255, 0.1);
+    position: absolute;
+    top: 10px;
+    height: calc(100% + 20px);
+    z-index: 1;
+  }
+  
+  .node-stop-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .node-marker-row.exit .node-line-down {
+    display: none;
+  }
+  
+  .node-leg-row {
     display: flex;
     gap: 16px;
-    position: relative;
-}
-
-.detail-marker {
-    width: 2px;
-    background: rgba(255, 255, 255, 0.1);
-    position: relative;
-    margin-left: 4px;
-}
-
-.detail-marker::before {
-    content: '';
-    position: absolute;
-    top: 4px; left: -3px;
-    width: 8px; height: 8px;
-    background: #333;
-    border-radius: 50%;
-    border: 2px solid #080808;
-}
-
-.detail-row:first-child .detail-marker::before { background: #4facfe; border-color: rgba(79, 172, 254, 0.3); box-shadow: 0 0 10px #4facfe; }
-.detail-row:last-child .detail-marker { background: transparent; }
-.detail-row:last-child .detail-content .detail-path.end .time { color: #00f2fe; }
-
-.detail-content {
-    flex-grow: 1;
-    padding-bottom: 24px;
-}
-
-.detail-path {
+    margin: 4px 0;
+  }
+  
+  .node-time-spacer { width: 45px; }
+  
+  .node-connector-spacer {
+    width: 14px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    position: relative;
+  }
+  
+  .leg-line-visual {
+    width: 2px;
+    height: 100%;
+  }
+  
+  .leg-line-visual.transit { background: #4facfe; }
+  .leg-line-visual.walk { 
+    background-image: linear-gradient(rgba(255,255,255,0.1) 33%, rgba(255,255,255,0) 0%);
+    background-position: center;
+    background-size: 2px 8px;
+    background-repeat: repeat-y;
+  }
+  
+  .node-leg-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 15px 0;
+    transition: transform 0.2s;
+  }
+  
+  .leg-main {
+    display: flex;
     align-items: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #eee;
-}
-
-.detail-path .time {
+    gap: 16px;
+  }
+  
+  .leg-icon {
     color: #4facfe;
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-}
-
-.detail-leg {
-    margin: 8px 0;
-    padding: 10px 14px;
-    border-radius: 10px;
-}
-
-.detail-leg.transit {
-    background: rgba(79, 172, 254, 0.08);
-    border-left: 3px solid #4facfe;
-}
-
-.detail-leg.walk {
-    background: rgba(255, 255, 255, 0.02);
-    border-left: 3px dashed #444;
-}
-
-.leg-info {
+    opacity: 0.8;
+    display: flex;
+  }
+  
+  .leg-info-group {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-}
-
-.route-name {
+  }
+  
+  .leg-title {
     font-size: 0.8rem;
-    font-weight: 800;
-    color: #fff;
-    text-transform: uppercase;
-}
-
-.trip-id {
+    font-weight: 700;
+    color: #eee;
+  }
+  
+  .leg-subtitle {
     font-size: 0.65rem;
+    font-weight: 600;
     color: #666;
-    font-family: monospace;
-}
-
-.walk-info {
-    font-size: 0.75rem;
-    color: #888;
-    font-style: italic;
-}
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-top: 2px;
+  }
 
 
 /* Error Message */
