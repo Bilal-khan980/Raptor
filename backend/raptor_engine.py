@@ -65,46 +65,48 @@ class RaptorRouter:
             return {'journeys': []}
 
         # 1. Identify all "Starting Opportunities" in the window
-        # An opportunity is (departure_time, stop_id, trip_id_if_transit)
+        # An opportunity is (departure_time, stop_id)
         opportunities = []
         
+        # We search in three 24-hour offsets to catch trips indexed differently (00:xx vs 24:xx)
+        search_windows = [
+            (start_time_seconds, start_time_seconds + window),
+            (start_time_seconds + 86400, start_time_seconds + 86400 + window),
+            (start_time_seconds - 86400, start_time_seconds - 86400 + window)
+        ]
+
+        def find_opps(target_stop_id, offset_t):
+            for route_id in self.stop_to_routes.get(target_stop_id, []):
+                route = self.routes[route_id]
+                pos = self.route_stop_index[route_id][target_stop_id]
+                for tid in route.trips:
+                    dep = self.trips[tid].departure_times[pos]
+                    for w_start, w_end in search_windows:
+                        if w_start <= dep <= w_end:
+                            opportunities.append((dep, target_stop_id))
+
         # Direct transit from source
-        for route_id in self.stop_to_routes.get(source_stop_id, []):
-            route = self.routes[route_id]
-            pos = self.route_stop_index[route_id][source_stop_id]
-            for tid in route.trips:
-                dep = self.trips[tid].departure_times[pos]
-                if start_time_seconds <= dep <= start_time_seconds + window:
-                    opportunities.append((dep, source_stop_id))
+        find_opps(source_stop_id, start_time_seconds)
         
         # Transit from stops reachable by foot
         for to_stop_id, walk_time in self.stops[source_stop_id].footpaths:
-            reach_time = start_time_seconds + walk_time
-            for route_id in self.stop_to_routes.get(to_stop_id, []):
-                route = self.routes[route_id]
-                pos = self.route_stop_index[route_id][to_stop_id]
-                for tid in route.trips:
-                    dep = self.trips[tid].departure_times[pos]
-                    if reach_time <= dep <= start_time_seconds + window:
-                        opportunities.append((dep, source_stop_id)) 
-                        # We still query from 'source' but RAPTOR will handle the rest
+            find_opps(to_stop_id, start_time_seconds + walk_time)
         
         # De-duplicate departure times to avoid redundant queries
         unique_start_times = sorted(list(set([o[0] for o in opportunities])))
         
-        # If no trips in exact window, we'll try the very next departure ONLY IF the window is empty
-        # but the user requested strict windowing, so let's stick to the window.
-        
         all_results = []
         seen_journeys = set() # (tuple of trip_ids)
-        window_end = start_time_seconds + window
 
         for dep_t in unique_start_times:
             res = self.query(source_stop_id, target_stop_id, dep_t)
             for j in res['journeys']:
-                # The first leg's departure must be within our window
+                # The first leg's departure must be within one of our windows
                 first_leg_dep = j['legs'][0]['departure_time']
-                if first_leg_dep > window_end:
+                
+                # Verify if this specific departure matches any of our target windows
+                in_any_window = any(w_start <= first_leg_dep <= w_end for w_start, w_end in search_windows)
+                if not in_any_window:
                     continue
 
                 # Create a signature for the journey to de-duplicate
@@ -401,7 +403,7 @@ def load_all_data(data_dir):
                 for other in neighbor_stops:
                     if sid == other.stop_id: continue
                     dist = haversine(stop.lat, stop.lon, other.lat, other.lon)
-                    if dist < 0.2: # 200 meters for tighter transfers
+                    if dist < 1: # Expanded to 500 meters for better inter-agency transfers
                         walk_time = int((dist / 1.1) * 1000) # 1.1 m/s (approx 4km/h)
                         stop.footpaths.append((other.stop_id, walk_time))
     
