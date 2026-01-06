@@ -293,33 +293,40 @@ label {
   letter-spacing: 0.05em;
 }
 
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  width: 100%;
+}
+
 .search-button {
   cursor: pointer;
   background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
   border: none;
-  border-radius: 14px;
-  height: 56px;
+  border-radius: 12px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  margin-top: 10px;
   color: #080808;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3);
-  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 242, 254, 0.2);
+  flex: 2; /* Search button takes more space */
+  min-width: 0;
 }
 
 .search-button:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 15px 40px rgba(0, 242, 254, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 242, 254, 0.4);
 }
 
 .search-button:active:not(:disabled) {
-  transform: translateY(-1px) scale(1.0);
+  transform: translateY(0);
 }
 
 .search-button:disabled {
@@ -331,21 +338,21 @@ label {
 
 .clear-button {
   cursor: pointer;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  height: 48px;
+  border-radius: 12px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  margin-top: 12px;
-  color: #666;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
   transition: all 0.3s;
-  width: 100%;
+  flex: 1; /* Clear button is smaller */
+  min-width: 0;
 }
 
 .clear-button:hover {
