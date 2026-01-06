@@ -74,6 +74,52 @@ h1 {
   letter-spacing: 0.05em;
 }
 
+.time-display-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 10px 0 30px 0;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.time-row:last-child { margin-bottom: 0; }
+
+.time-row.small {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 8px;
+}
+
+.time-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 0.05em;
+}
+
+.time-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.time-value.accent {
+  color: #4facfe;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -284,10 +330,11 @@ label {
   margin-top: 2px;
 }
 
-.journey-legs {
+.journey-legs-simple {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 .leg-badge {

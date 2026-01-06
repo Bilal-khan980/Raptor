@@ -187,8 +187,17 @@ function App() {
     setJourneys(null);
     setSelectedJourneyIndex(null);
 
-    const now = new Date();
-    const earliest = getTimeString(now);
+    // Get current time in California (America/Los_Angeles)
+    const getCalifTime = () => {
+        const now = new Date();
+        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
+        // Format: "MM/DD/YYYY, HH:MM:SS"
+        const timePart = califStr.split(', ')[1]; 
+        return timePart; // HH:MM:SS
+    };
+
+    const earliest = getCalifTime();
+    console.log("Searching from California current time:", earliest);
 
     try {
       const response = await axios.get(`${API_BASE}/route`, {
@@ -260,22 +269,28 @@ function App() {
 
       const stopsInJourney = [];
       const seen = new Set();
+      
+      // Explicitly mark source and target
       selectedJourney.forEach((step, idx) => {
+          const isFirst = idx === 0;
+          const isLast = idx === selectedJourney.length - 1;
+
           if (!seen.has(step.FromStopId)) {
               stopsInJourney.push({
                   id: step.FromStopId, name: step.FromStop, coords: step.FromStopCoords,
-                  type: idx === 0 ? 'source' : 'transfer'
+                  type: isFirst ? 'source' : 'transfer'
               });
               seen.add(step.FromStopId);
           }
-          const isLast = idx === selectedJourney.length - 1;
+          
           if (!seen.has(step.ToStopId)) {
-               stopsInJourney.push({
+                stopsInJourney.push({
                   id: step.ToStopId, name: step.ToStop, coords: step.ToStopCoords,
                   type: isLast ? 'target' : 'transfer'
               });
               seen.add(step.ToStopId);
           } else if (isLast) {
+              // Ensure the final destination always gets the 'target' class
               const s = stopsInJourney.find(s => s.id === step.ToStopId);
               if (s) s.type = 'target';
           }
@@ -295,12 +310,52 @@ function App() {
       });
   }, [selectedJourney, routeGeoJSON]);
 
+  // Time State for UI
+  const [times, setTimes] = useState({ calif: '', local: '', range: '' });
+
+  useEffect(() => {
+    const updateTime = () => {
+        const now = new Date();
+        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
+        const califTime = califStr.split(', ')[1];
+        
+        // Window Calculation
+        const [h, m, s] = califTime.split(':').map(Number);
+        const endH = (h + 1) % 24;
+        const pad = (n) => String(n).padStart(2, '0');
+        const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
+
+        setTimes({
+            calif: califTime,
+            local: now.toTimeString().split(' ')[0],
+            range: windowRange
+        });
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="app-container">
       <div className="sidebar">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h1>RAPTOR</h1>
-
+            
+            <div className="time-display-container">
+                <div className="time-row">
+                    <span className="time-label">California (PT):</span>
+                    <span className="time-value accent">{times.calif}</span>
+                </div>
+                <div className="time-row">
+                    <span className="time-label">Search Window:</span>
+                    <span className="time-value">{times.range}</span>
+                </div>
+                <div className="time-row small">
+                    <span className="time-label">Your Local Time:</span>
+                    <span className="time-value">{times.local}</span>
+                </div>
+            </div>
         </motion.div>
         
         <div className="form-group">
@@ -346,6 +401,14 @@ function App() {
             const endTime = journey[journey.length-1]?.ArrivalTime;
             const isActive = idx === selectedJourneyIndex;
             const transferCount = journey.filter(step => step.RouteId).length - 1;
+
+            // Total Duration Calculation
+            const parseToSec = (t) => {
+                const [h, m, s] = t.split(':').map(Number);
+                return h * 3600 + m * 60 + s;
+            };
+            const totalSec = parseToSec(endTime) - parseToSec(startTime);
+            const durationMin = Math.round(totalSec / 60);
             
             return (
               <motion.div 
@@ -358,31 +421,69 @@ function App() {
               >
                 <div className="journey-header">
                   <div className="journey-time">
-                    {startTime?.slice(0,5)} <span style={{fontSize: '0.8rem', opacity: 0.5}}>→</span> {endTime?.slice(0,5)}
+                    {startTime?.slice(0,5)} <span style={{fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle', margin: '0 4px'}}>→</span> {endTime?.slice(0,5)}
                   </div>
                   <div className="journey-meta">
-                    <div className="journey-duration">Option {idx + 1}</div>
+                    <div className="journey-duration">{durationMin} min</div>
                     <div className="journey-transfers">
                         {transferCount === 0 ? 'Direct' : `${transferCount} Transfer${transferCount > 1 ? 's' : ''}`}
                     </div>
                   </div>
                 </div>
                 
-                <div className="journey-legs">
-                  {journey.map((step, sIdx) => (
-                    <div key={sIdx} className={`leg-badge ${step.RouteId ? 'transit' : 'walk'}`}>
-                      {step.RouteId || 'Walk'}
-                    </div>
-                  ))}
+                <div className="journey-legs-simple">
+                  {journey.map((step, sIdx) => {
+                      if (step.RouteId) {
+                          return (
+                            <div key={sIdx} className="leg-badge transit">
+                                <span className="leg-route">{step.RouteId}</span>
+                            </div>
+                          );
+                      }
+                      return null;
+                  })}
                 </div>
 
-                <div className="journey-legs">
-                  {journey.map((step, sIdx) => (
-                    <div key={sIdx} className={`leg-badge ${step.RouteId ? 'transit' : 'walk'}`}>
-                      {step.RouteId || 'Walk'}
-                    </div>
-                  ))}
-                </div>
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div 
+                        className="journey-details"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                    >
+                        {journey.map((step, sIdx) => (
+                            <div key={sIdx} className="detail-row">
+                                <div className="detail-marker"></div>
+                                <div className="detail-content">
+                                    <div className="detail-path">
+                                        <span>Board {step.FromStop}</span>
+                                        <span className="time">{step.DepartureTime.slice(0,5)}</span>
+                                    </div>
+                                    
+                                    <div className={`detail-leg ${step.RouteId ? 'transit' : 'walk'}`}>
+                                        <div className="leg-info">
+                                            {step.RouteId ? (
+                                                <>
+                                                    <span className="route-name">{step.RouteId} ({step.ToStopId.split(':')[0]})</span>
+                                                    <span className="trip-id">Trip: {step.RouteLongId}</span>
+                                                </>
+                                            ) : (
+                                                <span className="walk-info">Transfer / Walking</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-path end">
+                                        <span>Alight {step.ToStop}</span>
+                                        <span className="time">{step.ArrivalTime.slice(0,5)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}
