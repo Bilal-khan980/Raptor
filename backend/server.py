@@ -112,8 +112,8 @@ async def get_route(source: str, target: str, earliest_dep: str):
     if not router_instance:
         return JSONResponse({"error": "Router not initialized"}, status_code=503)
 
-    # Use query_range to find all rides within a 1-hour (3600s) window
-    result = router_instance.query_range(source, target, dep_seconds, window=3600)
+    # Use query_range to find all rides within a 6-hour (21600s) window
+    result = router_instance.query_range(source, target, dep_seconds, window=21600)
     
     formatted_journeys = []
     for journey in result['journeys']:

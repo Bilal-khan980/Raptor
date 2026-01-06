@@ -321,7 +321,7 @@ function App() {
         
         // Window Calculation
         const [h, m, s] = califTime.split(':').map(Number);
-        const endH = (h + 1) % 24;
+        const endH = (h + 2) % 24;
         const pad = (n) => String(n).padStart(2, '0');
         const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
 

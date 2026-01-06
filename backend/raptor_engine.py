@@ -126,12 +126,15 @@ class RaptorRouter:
             return {'journeys': []}
 
         # arrival_times[k][stop_id] = earliest arrival time at stop_id with exactly k-1 transfers
-        max_rounds = 5 # Reduced rounds for performance in range-query
+        max_rounds = 30 # Increased for finding distant/complex routes
         arrival_times = {k: {sid: float('inf') for sid in self.stops} for k in range(max_rounds + 1)}
         best_arrival = {sid: float('inf') for sid in self.stops}
         
         # parent_pointers[round][stop_id] = (prev_stop, trip_id, board_stop, type, dep_time, arr_time)
         parent_pointers = defaultdict(dict)
+        
+        # Minimum time needed for a transfer (2 minutes)
+        TRANSFER_BUFFER = 120
         
         arrival_times[0][source_stop_id] = departure_time_seconds
         best_arrival[source_stop_id] = departure_time_seconds
@@ -166,7 +169,9 @@ class RaptorRouter:
                     
                     prev_round_arrival = arrival_times[k-1][stop_id]
                     if prev_round_arrival < float('inf'):
-                        new_trip_id = self._find_earliest_trip(route_id, stop_id, prev_round_arrival)
+                        # Apply transfer buffer for all rounds except the very first departure from source
+                        min_dep = prev_round_arrival + (TRANSFER_BUFFER if k > 1 else 0)
+                        new_trip_id = self._find_earliest_trip(route_id, stop_id, min_dep)
                         if new_trip_id is not None:
                             new_trip = self.trips[new_trip_id]
                             new_boarding_time = new_trip.departure_times[self.route_stop_index[route_id][stop_id]]
@@ -403,7 +408,7 @@ def load_all_data(data_dir):
                 for other in neighbor_stops:
                     if sid == other.stop_id: continue
                     dist = haversine(stop.lat, stop.lon, other.lat, other.lon)
-                    if dist < 1: # Expanded to 500 meters for better inter-agency transfers
+                    if dist < 5.0: # Expanded to 5km for maximum connectivity
                         walk_time = int((dist / 1.1) * 1000) # 1.1 m/s (approx 4km/h)
                         stop.footpaths.append((other.stop_id, walk_time))
     
