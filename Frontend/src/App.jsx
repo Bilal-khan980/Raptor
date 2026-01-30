@@ -189,11 +189,14 @@ function App() {
 
     // Get current time in California (America/Los_Angeles)
     const getCalifTime = () => {
-        const now = new Date();
-        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
-        // Format: "MM/DD/YYYY, HH:MM:SS"
-        const timePart = califStr.split(', ')[1]; 
-        return timePart; // HH:MM:SS
+        // const now = new Date();
+        // const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
+        // // Format: "MM/DD/YYYY, HH:MM:SS"
+        // const timePart = califStr.split(', ')[1]; 
+        // return timePart; // HH:MM:SS
+        
+        // comment that the tiem being real time of californ
+        return "05:15:00"; 
     };
 
     const earliest = getCalifTime();
@@ -209,6 +212,30 @@ function App() {
       });
       const data = response.data;
       if (data && data.length > 0) {
+        // Sort by Earliest Departure, then Duration
+        data.sort((a, b) => {
+            const getMetrics = (j) => {
+                if (!j || !j.length) return { dep: 999999, dur: 999999 };
+                const parse = (t) => {
+                    const [h, m, s] = t.split(':').map(Number);
+                    return h * 3600 + m * 60 + (s || 0);
+                };
+                let sSec = parse(j[0].DepartureTime);
+                let eSec = parse(j[j.length - 1].ArrivalTime);
+                if (eSec < sSec) eSec += 86400; // Handle midnight wrap
+                return { dep: sSec, dur: eSec - sSec };
+            };
+            
+            const mA = getMetrics(a);
+            const mB = getMetrics(b);
+            
+            // Primary: Departure Time (Earliest first)
+            if (mA.dep !== mB.dep) return mA.dep - mB.dep;
+            
+            // Secondary: Duration (Shortest first)
+            return mA.dur - mB.dur;
+        });
+
         setJourneys(data);
         setSelectedJourneyIndex(0);
         
@@ -315,10 +342,12 @@ function App() {
 
   useEffect(() => {
     const updateTime = () => {
-        const now = new Date();
-        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
-        const califTime = califStr.split(', ')[1];
+        const now = new Date(); // still needed for local time
+        // const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
+        // const califTime = califStr.split(', ')[1];
         
+        const califTime = "05:15:00";
+
         // Window Calculation
         const [h, m, s] = califTime.split(':').map(Number);
         const endH = (h + 2) % 24;
@@ -350,6 +379,10 @@ function App() {
                 <div className="time-row">
                     <span className="time-label">Search Window:</span>
                     <span className="time-value">{times.range}</span>
+                </div>
+                <div className="time-row">
+                    <span className="time-label">Trip Data Window:</span>
+                    <span className="time-value">05:00 - 09:00</span>
                 </div>
                 <div className="time-row small">
                     <span className="time-label">Your Local Time:</span>

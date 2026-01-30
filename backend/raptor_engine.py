@@ -110,12 +110,11 @@ class RaptorRouter:
         # De-duplicate departure times to avoid redundant queries
         unique_start_times = sorted(list(set([o[0] for o in opportunities])))
         
-        # Performance optimization: For 6-hour windows, there could be 100+ opportunities.
-        # We sample the top 30 most relevant start times to keep response under 10s 
-        # while still providing excellent coverage across the 6-hour window.
-        if len(unique_start_times) > 30:
-            step = len(unique_start_times) // 30
-            unique_start_times = unique_start_times[::step][:30]
+        # Performance optimization: For large windows, we need to sample but keep it generous.
+        # We sample the top 100 most relevant start times to ensure we don't miss the best connection.
+        if len(unique_start_times) > 100:
+            step = len(unique_start_times) // 100
+            unique_start_times = unique_start_times[::step][:100]
 
         # 2. Run RAPTOR queries in parallel
         # This is the "secret sauce" for high-performance range queries
@@ -155,9 +154,11 @@ class RaptorRouter:
             return {'journeys': []}
 
         # arrival_times[k][stop_id] = earliest arrival time at stop_id with exactly k-1 transfers
-        max_rounds = 15 # 15 transfers is optimal even for long distances
-        arrival_times = {k: {sid: float('inf') for sid in self.stops} for k in range(max_rounds + 1)}
-        best_arrival = {sid: float('inf') for sid in self.stops}
+        max_rounds = 30 
+        # OPTIMIZATION: Use defaultdict for lazy initialization. 
+        # This avoids initializing 30 * 10,000 floats per query, saving ~150ms per query.
+        arrival_times = [defaultdict(lambda: float('inf')) for _ in range(max_rounds + 1)]
+        best_arrival = defaultdict(lambda: float('inf'))
         
         # parent_pointers[round][stop_id] = (prev_stop, trip_id, board_stop, type, dep_time, arr_time)
         parent_pointers = defaultdict(dict)
@@ -394,6 +395,31 @@ def load_all_data(data_dir):
                     trip.stop_sequence = [f"{operator}:{r['stop_id']}" for r in rows]
                     trip.arrival_times = [to_sec(r['arrival_time']) for r in rows]
                     trip.departure_times = [to_sec(r['departure_time']) for r in rows]
+
+    # 5.5 FILTER TRIPS (Optimization: 05:00 - 09:00 Window)
+    # 05:00 = 18000s, 09:00 = 32400s
+    print("Filtering trips to 05:00-09:00 window...")
+    trips_to_remove = []
+    WINDOW_START, WINDOW_END = 18000, 32400
+    
+    for tid, trip in trips_dict.items():
+        if not trip.departure_times:
+            trips_to_remove.append(tid)
+            continue
+            
+        t_start = trip.departure_times[0]
+        t_end = trip.arrival_times[-1]
+        
+        # Keep if trip start time is in window
+        # 05:00 - 09:00 (18000 - 32400)
+        # End time does not matter
+        if not (WINDOW_START <= t_start <= WINDOW_END):
+            trips_to_remove.append(tid)
+            
+    before_count = len(trips_dict)
+    for tid in trips_to_remove:
+        del trips_dict[tid]
+    print(f"Trips filtered: {before_count} -> {len(trips_dict)}")
 
     # Now group trips into UNIQUE ROUTES based on stop sequence
     final_routes = {}
