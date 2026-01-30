@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // START: MAPBOX TOKEN
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWhtYWQtYXNsYW0iLCJhIjoiY2xpaW5iYXI1MXJlNzNmcWY4Y3pxenlsYyJ9.Ua15JiMsRNy3GOcz9cn4dw';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+if (!MAPBOX_TOKEN) {
+    console.error("Mapbox Token not found. Please set VITE_MAPBOX_TOKEN in your .env file.");
+}
 mapboxgl.accessToken = MAPBOX_TOKEN;
 // END: MAPBOX TOKEN
 
