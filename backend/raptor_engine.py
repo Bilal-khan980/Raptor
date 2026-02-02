@@ -379,7 +379,7 @@ class RaptorRouter:
         all_results.sort(key=lambda x: x['legs'][0]['departure_time'])
         return {'journeys': all_results}
 
-def load_all_data(data_dir):
+def load_all_data(data_dir, window_start=None, window_end=None):
     stops_dict = {}
     routes_base = {} 
     trips_dict = {}
@@ -450,27 +450,27 @@ def load_all_data(data_dir):
                     trip.arrival_times = [to_sec(r['arrival_time']) for r in rows]
                     trip.departure_times = [to_sec(r['departure_time']) for r in rows]
 
-    # FILTER TRIPS (05:00 - 09:00 Window)
-    print("Filtering trips to 05:00-09:00 window...")
-    trips_to_remove = []
-    WINDOW_START, WINDOW_END = 18000, 32400
-    
-    for tid, trip in trips_dict.items():
-        if not trip.departure_times:
-            trips_to_remove.append(tid)
-            continue
-            
-        t_start = trip.departure_times[0]
-        # t_end = trip.arrival_times[-1] # optimization: end time check removed
+    # FILTER TRIPS (Dynamic Window)
+    if window_start is not None and window_end is not None:
+        print(f"Filtering trips to window: {window_start} - {window_end} seconds...")
+        trips_to_remove = []
         
-        # Keep if trip start time is in window
-        if not (WINDOW_START <= t_start <= WINDOW_END):
-            trips_to_remove.append(tid)
-            
-    before_count = len(trips_dict)
-    for tid in trips_to_remove:
-        del trips_dict[tid]
-    print(f"Trips filtered: {before_count} -> {len(trips_dict)}")
+        for tid, trip in trips_dict.items():
+            if not trip.departure_times:
+                trips_to_remove.append(tid)
+                continue
+                
+            t_start = trip.departure_times[0]
+            # Keep if trip start time is in window
+            if not (window_start <= t_start <= window_end):
+                trips_to_remove.append(tid)
+                
+        before_count = len(trips_dict)
+        for tid in trips_to_remove:
+            del trips_dict[tid]
+        print(f"Trips filtered: {before_count} -> {len(trips_dict)}")
+    else:
+        print("No time window specified. Loading ALL trips (may be slow).")
 
     final_routes = {}
     pattern_to_route_id = {}

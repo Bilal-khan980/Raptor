@@ -191,15 +191,12 @@ function App() {
     setSelectedJourneyIndex(null);
 
     // Get current time in California (America/Los_Angeles)
+    // Get current time in California (America/Los_Angeles)
     const getCalifTime = () => {
-        // const now = new Date();
-        // const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
-        // // Format: "MM/DD/YYYY, HH:MM:SS"
-        // const timePart = califStr.split(', ')[1]; 
-        // return timePart; // HH:MM:SS
-        
-        // comment that the tiem being real time of californ
-        return "05:15:00"; 
+        const now = new Date();
+        const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(califDate.getHours())}:${pad(califDate.getMinutes())}:${pad(califDate.getSeconds())}`;
     };
 
     const earliest = getCalifTime();
@@ -340,32 +337,69 @@ function App() {
       });
   }, [selectedJourney, routeGeoJSON]);
 
-  // Time State for UI
-  const [times, setTimes] = useState({ calif: '', local: '', range: '' });
+  // Time & Status State
+  const [times, setTimes] = useState({ 
+      calif: '', 
+      local: '', 
+      range: '', 
+      lastSynced: '--:--', 
+      dataWindow: '--:-- to --:--' 
+  });
 
   useEffect(() => {
     const updateTime = () => {
-        const now = new Date(); // still needed for local time
-        // const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
-        // const califTime = califStr.split(', ')[1];
+        const now = new Date();
+        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
+        // Format: "MM/DD/YYYY, HH:MM:SS" ?? No, depends on browser locale, usually "M/D/YYYY, HH:MM:SS" or similar
+        // Robust way:
+        const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
         
-        const califTime = "05:15:00";
-
-        // Window Calculation
-        const [h, m, s] = califTime.split(':').map(Number);
-        const endH = (h + 2) % 24;
+        // Pad helper
         const pad = (n) => String(n).padStart(2, '0');
+        const h = califDate.getHours();
+        const m = califDate.getMinutes();
+        const s = califDate.getSeconds();
+        
+        const califTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+        // Search Window: current to +1 hour
+        const endH = (h + 1) % 24;
         const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
 
-        setTimes({
+        setTimes(prev => ({
+            ...prev,
             calif: califTime,
             local: now.toTimeString().split(' ')[0],
             range: windowRange
-        });
+        }));
     };
+
+    const fetchStatus = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/status`);
+            if (res.data) {
+                const { last_synced_hour, trip_window_start, trip_window_end } = res.data;
+                setTimes(prev => ({
+                    ...prev,
+                    lastSynced: `${String(last_synced_hour).padStart(2,'0')}:00`,
+                    dataWindow: `${trip_window_start} - ${trip_window_end}`
+                }));
+            }
+        } catch (e) {
+            console.error("Status fetch failed", e);
+        }
+    };
+
     updateTime();
+    fetchStatus();
+
     const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
+    const statusTimer = setInterval(fetchStatus, 30000); // Poll status every 30s
+    
+    return () => {
+        clearInterval(timer);
+        clearInterval(statusTimer);
+    };
   }, []);
 
   return (
@@ -385,7 +419,11 @@ function App() {
                 </div>
                 <div className="time-row">
                     <span className="time-label">Trip Data Window:</span>
-                    <span className="time-value">05:00 - 09:00</span>
+                    <span className="time-value">{times.dataWindow}</span>
+                </div>
+                <div className="time-row">
+                    <span className="time-label">Last Hourly Sync:</span>
+                    <span className="time-value">{times.lastSynced}</span>
                 </div>
                 <div className="time-row small">
                     <span className="time-label">Your Local Time:</span>

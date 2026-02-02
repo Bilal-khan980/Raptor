@@ -8,24 +8,78 @@ import os
 
 from raptor_engine import load_all_data, RaptorRouter, CALIF_TZ
 
+import asyncio
 from contextlib import asynccontextmanager
+
+# Global state for sync status
+last_synced_hour = -1
+
+async def background_sync_task():
+    global router_instance, stops_cache, shapes_cache, last_synced_hour
+    
+    while True:
+        now_calif = datetime.now(CALIF_TZ)
+        current_hour = now_calif.hour
+        
+        # Check if we need to sync (new hour or first run)
+        if current_hour != last_synced_hour:
+            print(f"--- HOUR CHANGE DETECTED: {current_hour}:00 ---")
+            print("Syncing trip data for new window...")
+            
+            # Window: Current-1h to Current+4h
+            # Wraps around 24h naturally, but for GTFS seconds we need absolute
+            # GTFS often goes 24, 25, etc. We'll simplisticly handle day boundaries
+            # by covering a wide enough range or just 0-24 logic.
+            # Ideally: window_start = (h-1)*3600, window_end = (h+4)*3600
+            
+            # Using seconds since midnight
+            w_start_h = current_hour - 1
+            w_end_h = current_hour + 4
+            
+            # Simple clamp or wrap? For simplicity, we assume day-of operations.
+            # If w_start_h < 0, it technically means previous day, but we'll just clamp to 0 
+            # or handle wrap if our GTFS loader supports it. 
+            # Our loader assumes 0-28+ hours.
+            
+            # Start: max(0, (h-1)*3600)
+            # End: (h+4)*3600 (can go > 86400 which is fine for GTFS)
+            
+            # SPECIAL CASE: if h=0 (midnight), h-1 = -1. We might want late night trips.
+            # We'll just define window strictly in seconds.
+            
+            start_seconds = (current_hour - 1) * 3600
+            end_seconds   = (current_hour + 4) * 3600
+            
+            # Clamp start to 0 if needed, or allow negative? Transit seconds usually positive.
+            # If it's 5AM, we want 4AM trips. (14400s)
+            
+            print(f"Loading Window: {start_seconds}s to {end_seconds}s")
+            
+            if os.path.exists(DATA_DIR):
+                # Reload data in a thread to not block event loop? 
+                # load_all_data is CPU bound and IO bound. 
+                # For simplicity in this script, we run it directly (blocking briefly).
+                stops, routes, trips, shapes = load_all_data(DATA_DIR, start_seconds, end_seconds)
+                
+                # Replace global router
+                router_instance = RaptorRouter(stops, routes, trips, shapes)
+                stops_cache = stops
+                shapes_cache = shapes
+                last_synced_hour = current_hour
+                print(f"SYNC COMPLETE. Last Synced Hour: {last_synced_hour}:00. Total Stops: {len(stops)}")
+            else:
+                print("Data dir missing!")
+
+        await asyncio.sleep(60) # Check every minute
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global router_instance, stops_cache, shapes_cache
-    print("--- RAPTOR SERVER VERSION 2.0 (Midnight Fix) ---")
-    print("Loading GTFS data...")
-    if not os.path.exists(DATA_DIR) or not os.listdir(DATA_DIR):
-        print("Data directory is empty. Please run data_downloader.py first.")
-        # We'll initialize with empty if no data, but ideally it should have data
-        stops_dict, routes_dict, trips_dict, shapes_dict = {}, {}, {}, {}
-    else:
-        stops_dict, routes_dict, trips_dict, shapes_dict = load_all_data(DATA_DIR)
+    print("--- RAPTOR SERVER VERSION 3.0 (Dynamic Sync) ---")
     
-    router_instance = RaptorRouter(stops_dict, routes_dict, trips_dict, shapes_dict)
-    stops_cache = stops_dict
-    shapes_cache = shapes_dict
-    print("Data loaded successfuly.")
+    # 1. Start background task
+    asyncio.create_task(background_sync_task())
+    
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -44,10 +98,24 @@ router_instance = None
 stops_cache = {}
 shapes_cache = {}
 
-# Routes and middleware below
+@app.get("/api/status")
+async def get_status():
+    global last_synced_hour
+    now = datetime.now(CALIF_TZ)
+    return {
+        "server_time": now.strftime("%H:%M:%S"),
+        "last_synced_hour": last_synced_hour,
+        "trip_window_start": f"{last_synced_hour-1}:00",
+        "trip_window_end": f"{last_synced_hour+4}:00"
+    }
 
 @app.get("/api/all-stops-geojson")
 async def get_all_stops():
+    # Defensive check
+    if not stops_cache:
+        print("WARNING: stops_cache is empty during request!")
+        return {"type": "FeatureCollection", "features": []}
+
     features = []
     for sid, stop in stops_cache.items():
         features.append({
