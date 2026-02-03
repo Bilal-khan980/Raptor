@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 from pytz import timezone
 import os
+import socketio
 
 from raptor_engine import load_all_data, RaptorRouter, CALIF_TZ
 
@@ -14,62 +15,56 @@ from contextlib import asynccontextmanager
 # Global state for sync status
 last_synced_hour = -1
 
+# Socket.IO Setup
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+
 async def background_sync_task():
     global router_instance, stops_cache, shapes_cache, last_synced_hour
     
     while True:
-        now_calif = datetime.now(CALIF_TZ)
-        current_hour = now_calif.hour
-        
-        # Check if we need to sync (new hour or first run)
-        if current_hour != last_synced_hour:
-            print(f"--- HOUR CHANGE DETECTED: {current_hour}:00 ---")
-            print("Syncing trip data for new window...")
+        try:
+            now_calif = datetime.now(CALIF_TZ)
+            current_hour = now_calif.hour
             
-            # Window: Current-1h to Current+4h
-            # Wraps around 24h naturally, but for GTFS seconds we need absolute
-            # GTFS often goes 24, 25, etc. We'll simplisticly handle day boundaries
-            # by covering a wide enough range or just 0-24 logic.
-            # Ideally: window_start = (h-1)*3600, window_end = (h+4)*3600
-            
-            # Using seconds since midnight
-            w_start_h = current_hour - 1
-            w_end_h = current_hour + 4
-            
-            # Simple clamp or wrap? For simplicity, we assume day-of operations.
-            # If w_start_h < 0, it technically means previous day, but we'll just clamp to 0 
-            # or handle wrap if our GTFS loader supports it. 
-            # Our loader assumes 0-28+ hours.
-            
-            # Start: max(0, (h-1)*3600)
-            # End: (h+4)*3600 (can go > 86400 which is fine for GTFS)
-            
-            # SPECIAL CASE: if h=0 (midnight), h-1 = -1. We might want late night trips.
-            # We'll just define window strictly in seconds.
-            
-            start_seconds = (current_hour - 1) * 3600
-            end_seconds   = (current_hour + 4) * 3600
-            
-            # Clamp start to 0 if needed, or allow negative? Transit seconds usually positive.
-            # If it's 5AM, we want 4AM trips. (14400s)
-            
-            print(f"Loading Window: {start_seconds}s to {end_seconds}s")
-            
-            if os.path.exists(DATA_DIR):
-                # Reload data in a thread to not block event loop? 
-                # load_all_data is CPU bound and IO bound. 
-                # For simplicity in this script, we run it directly (blocking briefly).
-                stops, routes, trips, shapes = load_all_data(DATA_DIR, start_seconds, end_seconds)
+            # Check if we need to sync (new hour or first run)
+            if current_hour != last_synced_hour:
+                print(f"--- HOUR CHANGE DETECTED: {current_hour}:00 ---")
+                print("Syncing trip data for new window...")
                 
-                # Replace global router
-                router_instance = RaptorRouter(stops, routes, trips, shapes)
-                stops_cache = stops
-                shapes_cache = shapes
-                last_synced_hour = current_hour
-                print(f"SYNC COMPLETE. Last Synced Hour: {last_synced_hour}:00. Total Stops: {len(stops)}")
-            else:
-                print("Data dir missing!")
+                # Window: Current-1h to Current+4h
+                # Using seconds since midnight
+                
+                # Start: max(0, (h-1)*3600)
+                # End: (h+4)*3600 (can go > 86400 which is fine for GTFS)
+                
+                start_seconds = (current_hour - 1) * 3600
+                end_seconds   = (current_hour + 4) * 3600
+                
+                print(f"Loading Window: {start_seconds}s to {end_seconds}s")
+                
+                if os.path.exists(DATA_DIR):
+                    stops, routes, trips, shapes = load_all_data(DATA_DIR, start_seconds, end_seconds)
+                    
+                    # Replace global router
+                    router_instance = RaptorRouter(stops, routes, trips, shapes)
+                    stops_cache = stops
+                    shapes_cache = shapes
+                    last_synced_hour = current_hour
+                    print(f"SYNC COMPLETE. Last Synced Hour: {last_synced_hour}:00. Total Stops: {len(stops)}")
+                    
+                    # Emit Sync Complete Event
+                    await sio.emit('sync_complete', {
+                        'hour': last_synced_hour,
+                        'total_stops': len(stops)
+                    })
+                else:
+                    print("Data dir missing!")
 
+        except Exception as e:
+            print(f"ERROR IN SYNC TASK: {e}")
+            import traceback
+            traceback.print_exc()
+        
         await asyncio.sleep(60) # Check every minute
 
 @asynccontextmanager
@@ -92,6 +87,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Wrap FastAPI with Socket.IO
+socket_app = socketio.ASGIApp(sio, app)
 
 DATA_DIR = r"C:\Users\bilal\Desktop\Raptor\Raptor\gtfs_data"
 router_instance = None
@@ -228,4 +226,5 @@ async def health():
 if __name__ == "__main__":
     # Enabling 'reload=True' provides the 'watchdog' functionality 
     # that restarts the server automatically when code changes.
-    uvicorn.run("server:app", host="127.0.0.1", port=5001, reload=True)
+    # IMPORTANT: We must run 'socket_app' now
+    uvicorn.run("server:socket_app", host="127.0.0.1", port=5001, reload=True)

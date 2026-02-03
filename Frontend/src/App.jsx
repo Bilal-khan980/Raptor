@@ -346,60 +346,99 @@ function App() {
       dataWindow: '--:-- to --:--' 
   });
 
+  // Time & Status Logic extracted to component scope to avoid nested hooks
+  const updateTime = useRef(() => {}).current; // Placeholder if needed, but better to just define function
+  
+  // We use functional state updates, so these don't strictly need to be dependencies, 
+  // but let's define them inside the component body, not inside a useEffect.
+  
+  const updateTimeLogic = () => {
+      const now = new Date();
+      // Robust way:
+      const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+      
+      // Pad helper
+      const pad = (n) => String(n).padStart(2, '0');
+      const h = califDate.getHours();
+      const m = califDate.getMinutes();
+      const s = califDate.getSeconds();
+      
+      const califTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+      // Search Window: current to +1 hour
+      const endH = (h + 1) % 24;
+      const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
+
+      setTimes(prev => ({
+          ...prev,
+          calif: califTime,
+          local: now.toTimeString().split(' ')[0],
+          range: windowRange
+      }));
+  };
+
+  const fetchStatusLogic = async () => {
+      try {
+          const res = await axios.get(`${API_BASE}/status`);
+          if (res.data) {
+              const { last_synced_hour, trip_window_start, trip_window_end } = res.data;
+              setTimes(prev => ({
+                  ...prev,
+                  lastSynced: `${String(last_synced_hour).padStart(2,'0')}:00`,
+                  dataWindow: `${trip_window_start} - ${trip_window_end}`
+              }));
+          }
+      } catch (e) {
+          console.error("Status fetch failed", e);
+      }
+  };
+
+  // Initial load and Interval Effect
   useEffect(() => {
-    const updateTime = () => {
-        const now = new Date();
-        const califStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour12: false });
-        // Format: "MM/DD/YYYY, HH:MM:SS" ?? No, depends on browser locale, usually "M/D/YYYY, HH:MM:SS" or similar
-        // Robust way:
-        const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-        
-        // Pad helper
-        const pad = (n) => String(n).padStart(2, '0');
-        const h = califDate.getHours();
-        const m = califDate.getMinutes();
-        const s = califDate.getSeconds();
-        
-        const califTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    updateTimeLogic();
+    fetchStatusLogic();
 
-        // Search Window: current to +1 hour
-        const endH = (h + 1) % 24;
-        const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
-
-        setTimes(prev => ({
-            ...prev,
-            calif: califTime,
-            local: now.toTimeString().split(' ')[0],
-            range: windowRange
-        }));
-    };
-
-    const fetchStatus = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/status`);
-            if (res.data) {
-                const { last_synced_hour, trip_window_start, trip_window_end } = res.data;
-                setTimes(prev => ({
-                    ...prev,
-                    lastSynced: `${String(last_synced_hour).padStart(2,'0')}:00`,
-                    dataWindow: `${trip_window_start} - ${trip_window_end}`
-                }));
-            }
-        } catch (e) {
-            console.error("Status fetch failed", e);
-        }
-    };
-
-    updateTime();
-    fetchStatus();
-
-    const timer = setInterval(updateTime, 1000);
-    const statusTimer = setInterval(fetchStatus, 30000); // Poll status every 30s
+    const timer = setInterval(updateTimeLogic, 1000);
+    const statusTimer = setInterval(fetchStatusLogic, 30000); // Poll status every 30s
     
     return () => {
         clearInterval(timer);
         clearInterval(statusTimer);
     };
+  }, []);
+
+  // Socket.IO Integration Effect
+  useEffect(() => {
+      import('socket.io-client').then(({ io }) => {
+          const socket = io('http://127.0.0.1:5001', {
+              transports: ['websocket'],
+              reconnection: true,
+          });
+
+          socket.on('connect', () => {
+              console.log('Connected to socket server');
+          });
+
+          socket.on('sync_complete', (data) => {
+              console.log('Sync Complete Event Received:', data);
+              // Refresh status and map data immediately
+              fetchStatusLogic();
+              
+              // Let's re-fetch geojson manually and set it
+              axios.get(`${API_BASE}/all-stops-geojson`).then(res => {
+                  if (map.current) {
+                      const source = map.current.getSource('all-stops');
+                      if (source) {
+                          source.setData(res.data);
+                      }
+                  }
+              }).catch(err => console.error("Failed to refresh stops after sync", err));
+          });
+          
+          return () => {
+              socket.disconnect();
+          };
+      });
   }, []);
 
   return (
