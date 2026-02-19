@@ -190,17 +190,9 @@ function App() {
     setJourneys(null);
     setSelectedJourneyIndex(null);
 
-    // Get current time in California (America/Los_Angeles)
-    // Get current time in California (America/Los_Angeles)
-    const getCalifTime = () => {
-        const now = new Date();
-        const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-        const pad = (n) => String(n).padStart(2, '0');
-        return `${pad(califDate.getHours())}:${pad(califDate.getMinutes())}:${pad(califDate.getSeconds())}`;
-    };
-
-    const earliest = getCalifTime();
-    console.log("Searching from California current time:", earliest);
+    // Hardcoded search window: 9 PM to 11 PM California time
+    const earliest = '21:00:00';
+    console.log("Searching with hardcoded departure time:", earliest);
 
     try {
       const response = await axios.get(`${API_BASE}/route`, {
@@ -340,10 +332,7 @@ function App() {
   // Time & Status State
   const [times, setTimes] = useState({ 
       calif: '', 
-      local: '', 
-      range: '', 
-      lastSynced: '--:--', 
-      dataWindow: '--:-- to --:--' 
+      local: ''
   });
 
   // Time & Status Logic extracted to component scope to avoid nested hooks
@@ -354,7 +343,6 @@ function App() {
   
   const updateTimeLogic = () => {
       const now = new Date();
-      // Robust way:
       const califDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
       
       // Pad helper
@@ -365,45 +353,40 @@ function App() {
       
       const califTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
 
-      // Search Window: current to +1 hour
-      const endH = (h + 1) % 24;
-      const windowRange = `${pad(h)}:${pad(m)} - ${pad(endH)}:${pad(m)}`;
-
-      setTimes(prev => ({
-          ...prev,
+      setTimes({
           calif: califTime,
-          local: now.toTimeString().split(' ')[0],
-          range: windowRange
-      }));
+          local: now.toTimeString().split(' ')[0]
+      });
   };
 
-  const fetchStatusLogic = async () => {
-      try {
-          const res = await axios.get(`${API_BASE}/status`);
-          if (res.data) {
-              const { last_synced_hour, trip_window_start, trip_window_end } = res.data;
-              setTimes(prev => ({
-                  ...prev,
-                  lastSynced: `${String(last_synced_hour).padStart(2,'0')}:00`,
-                  dataWindow: `${trip_window_start} - ${trip_window_end}`
-              }));
-          }
-      } catch (e) {
-          console.error("Status fetch failed", e);
-      }
-  };
+  // fetchStatusLogic commented out — no longer needed
+  // const fetchStatusLogic = async () => {
+  //     try {
+  //         const res = await axios.get(`${API_BASE}/status`);
+  //         if (res.data) {
+  //             const { last_synced_hour, trip_window_start, trip_window_end } = res.data;
+  //             setTimes(prev => ({
+  //                 ...prev,
+  //                 lastSynced: `${String(last_synced_hour).padStart(2,'0')}:00`,
+  //                 dataWindow: `${trip_window_start} - ${trip_window_end}`
+  //             }));
+  //         }
+  //     } catch (e) {
+  //         console.error("Status fetch failed", e);
+  //     }
+  // };
 
   // Initial load and Interval Effect
   useEffect(() => {
     updateTimeLogic();
-    fetchStatusLogic();
+    // fetchStatusLogic();  // Commented out — not needed
 
     const timer = setInterval(updateTimeLogic, 1000);
-    const statusTimer = setInterval(fetchStatusLogic, 30000); // Poll status every 30s
+    // const statusTimer = setInterval(fetchStatusLogic, 30000);
     
     return () => {
         clearInterval(timer);
-        clearInterval(statusTimer);
+        // clearInterval(statusTimer);
     };
   }, []);
 
@@ -421,10 +404,7 @@ function App() {
 
           socket.on('sync_complete', (data) => {
               console.log('Sync Complete Event Received:', data);
-              // Refresh status and map data immediately
-              fetchStatusLogic();
-              
-              // Let's re-fetch geojson manually and set it
+              // Refresh map data immediately
               axios.get(`${API_BASE}/all-stops-geojson`).then(res => {
                   if (map.current) {
                       const source = map.current.getSource('all-stops');
@@ -454,15 +434,7 @@ function App() {
                 </div>
                 <div className="time-row">
                     <span className="time-label">Search Window:</span>
-                    <span className="time-value">{times.range}</span>
-                </div>
-                <div className="time-row">
-                    <span className="time-label">Trip Data Window:</span>
-                    <span className="time-value">{times.dataWindow}</span>
-                </div>
-                <div className="time-row">
-                    <span className="time-label">Last Hourly Sync:</span>
-                    <span className="time-value">{times.lastSynced}</span>
+                    <span className="time-value">21:00 - 23:00</span>
                 </div>
                 <div className="time-row small">
                     <span className="time-label">Your Local Time:</span>
@@ -626,11 +598,32 @@ function App() {
                                                     <div className="leg-title">
                                                         {step.RouteId ? `${step.RouteId} to ${step.ToStop}` : `Walk to ${step.ToStop}`}
                                                     </div>
-                                                    {step.RouteId && (
+                                                    {step.RouteId ? (
                                                         <div className="leg-subtitle">
                                                             {step.ToStopId.split(':')[0]} Agency • Trip #{step.RouteLongId.split(':').pop()}
                                                         </div>
-                                                    )}
+                                                    ) : (() => {
+                                                        const depParts = step.DepartureTime.split(':').map(Number);
+                                                        const arrParts = step.ArrivalTime.split(':').map(Number);
+                                                        let depSec = depParts[0]*3600 + depParts[1]*60 + (depParts[2]||0);
+                                                        let arrSec = arrParts[0]*3600 + arrParts[1]*60 + (arrParts[2]||0);
+                                                        if (arrSec < depSec) arrSec += 86400;
+                                                        const walkMin = Math.round((arrSec - depSec) / 60);
+                                                        
+                                                        const toRad = (d) => d * Math.PI / 180;
+                                                        const lat1 = parseFloat(step.FromStopCoords.lat), lon1 = parseFloat(step.FromStopCoords.lon);
+                                                        const lat2 = parseFloat(step.ToStopCoords.lat), lon2 = parseFloat(step.ToStopCoords.lon);
+                                                        const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+                                                        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+                                                        const distM = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                                                        const distStr = distM >= 1000 ? `${(distM/1000).toFixed(1)} km` : `${Math.round(distM)} m`;
+                                                        
+                                                        return (
+                                                            <div className="leg-subtitle">
+                                                                🚶 {walkMin} min • {distStr}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </div>
                                         </div>

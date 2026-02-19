@@ -23,38 +23,23 @@ async def background_sync_task():
     
     while True:
         try:
-            now_calif = datetime.now(CALIF_TZ)
-            current_hour = now_calif.hour
-            
-            # Check if we need to sync (new hour or first run)
-            if current_hour != last_synced_hour:
-                print(f"--- HOUR CHANGE DETECTED: {current_hour}:00 ---")
-                print("Syncing trip data for new window...")
-                
-                # Window: Current-1h to Current+4h
-                # Using seconds since midnight
-                
-                # Start: max(0, (h-1)*3600)
-                # End: (h+4)*3600 (can go > 86400 which is fine for GTFS)
-                
-                start_seconds = (current_hour - 1) * 3600
-                end_seconds   = (current_hour + 4) * 3600
-                
-                print(f"Loading Window: {start_seconds}s to {end_seconds}s")
+            # Only load once (first run) — no hourly re-sync needed
+            if last_synced_hour == -1:
+                print("--- LOADING ALL TRIPS (NO TIME WINDOW FILTERING) ---")
                 
                 if os.path.exists(DATA_DIR):
-                    stops, routes, trips, shapes = load_all_data(DATA_DIR, start_seconds, end_seconds)
+                    # No start/end seconds => loads ALL trips for the current day
+                    stops, routes, trips, shapes = load_all_data(DATA_DIR)
                     
                     # Replace global router
                     router_instance = RaptorRouter(stops, routes, trips, shapes)
                     stops_cache = stops
                     shapes_cache = shapes
-                    last_synced_hour = current_hour
-                    print(f"SYNC COMPLETE. Last Synced Hour: {last_synced_hour}:00. Total Stops: {len(stops)}")
+                    last_synced_hour = 0  # Mark as loaded
+                    print(f"LOAD COMPLETE. Total Stops: {len(stops)}")
                     
                     # Emit Sync Complete Event
                     await sio.emit('sync_complete', {
-                        'hour': last_synced_hour,
                         'total_stops': len(stops)
                     })
                 else:
@@ -98,13 +83,11 @@ shapes_cache = {}
 
 @app.get("/api/status")
 async def get_status():
-    global last_synced_hour
     now = datetime.now(CALIF_TZ)
     return {
         "server_time": now.strftime("%H:%M:%S"),
-        "last_synced_hour": last_synced_hour,
-        "trip_window_start": f"{last_synced_hour-1}:00",
-        "trip_window_end": f"{last_synced_hour+4}:00"
+        "search_window": "21:00 - 23:00",
+        "data_loaded": last_synced_hour != -1
     }
 
 @app.get("/api/all-stops-geojson")
@@ -167,24 +150,46 @@ def slice_shape(shape_pts, from_lat, from_lon, to_lat, to_lon):
     return shape_pts[best_start_idx : best_end_idx + 1]
 
 @app.get("/api/route")
-async def get_route(source: str, target: str, earliest_dep: str):
-    # earliest_dep is HH:MM:SS or HH:MM
-    parts = earliest_dep.split(':')
-    h = int(parts[0])
-    m = int(parts[1])
-    s = int(parts[2]) if len(parts) > 2 else 0
-    dep_seconds = h * 3600 + m * 60 + s
+async def get_route(source: str, target: str, earliest_dep: str = "21:00:00"):
+    # Hardcoded search window: 9 PM to 11 PM California time
+    dep_seconds = 21 * 3600  # 21:00:00 = 75600 seconds
+    search_window = 2 * 3600  # 2-hour window = 7200 seconds
     
     if not router_instance:
         return JSONResponse({"error": "Router not initialized"}, status_code=503)
 
-    # Use query_range to find all rides within a 12-hour (43200s) window
-    result = router_instance.query_range(source, target, dep_seconds, window=43200)
+    # Search within the hardcoded 2-hour window (9 PM - 11 PM)
+    result = router_instance.query_range(source, target, dep_seconds, window=search_window)
     
     formatted_journeys = []
     for journey in result['journeys']:
+        legs = journey['legs']
+        
+        # --- FILTER 1: Skip if consecutive walk legs ---
+        has_consecutive_walks = False
+        for i in range(len(legs) - 1):
+            if legs[i]['type'] != 'transit' and legs[i+1]['type'] != 'transit':
+                has_consecutive_walks = True
+                break
+        if has_consecutive_walks:
+            continue
+        
+        # --- FILTER 2: Skip if any single walk segment > 10 minutes ---
+        has_long_walk = False
+        for leg in legs:
+            if leg['type'] != 'transit':
+                walk_duration = leg['arrival_time'] - leg['departure_time']
+                if walk_duration < 0:
+                    walk_duration += 86400  # midnight wrap
+                if walk_duration > 600:  # 10 minutes = 600 seconds
+                    has_long_walk = True
+                    break
+        if has_long_walk:
+            continue
+        
+        # --- Format the journey ---
         steps = []
-        for leg in journey['legs']:
+        for leg in legs:
             from_stop = stops_cache[leg['from_stop_id']]
             to_stop = stops_cache[leg['to_stop_id']]
             
