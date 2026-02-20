@@ -19,21 +19,28 @@ function App() {
   const [targetId, setTargetId] = useState('');
   const [sourceName, setSourceName] = useState('');
   const [targetName, setTargetName] = useState('');
-  
+  const [sourceCoords, setSourceCoords] = useState(null);  // {lat, lon}
+  const [targetCoords, setTargetCoords] = useState(null);
+
   const [journeys, setJourneys] = useState(null);
   const [selectedJourneyIndex, setSelectedJourneyIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [carpoolLoading, setCarpoolLoading] = useState(false);
+  const [carpoolResult, setCarpoolResult] = useState(null);
+  const [carpoolRoadsGeoJSON, setCarpoolRoadsGeoJSON] = useState(null);
+
   // Reducer-like logic for state to avoid closure issues in map events
-  const stateRef = useRef({ sourceId: '', targetId: '' });
+  const stateRef = useRef({ sourceId: '', targetId: '', sourceCoords: null, targetCoords: null });
   useEffect(() => {
-    stateRef.current = { sourceId, targetId };
-  }, [sourceId, targetId]);
+    stateRef.current = { sourceId, targetId, sourceCoords, targetCoords };
+  }, [sourceId, targetId, sourceCoords, targetCoords]);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef([]);
+  const carpoolMarkersRef = useRef([]); // markers for carpool stops
 
   // Initialize Mapbox Map
   useEffect(() => {
@@ -106,7 +113,7 @@ function App() {
             map.current.getCanvas().style.cursor = '';
         });
 
-        // Route Source
+        // Route Source (transit + walk)
         map.current.addSource('route-source', {
             type: 'geojson',
             data: { type: 'FeatureCollection', features: [] }
@@ -138,24 +145,66 @@ function App() {
             filter: ['!', ['get', 'isWalk']]
         });
 
+        // Carpool road-following source (green)
+        map.current.addSource('carpool-route-source', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.current.addLayer({
+            id: 'carpool-route-glow',
+            type: 'line',
+            source: 'carpool-route-source',
+            paint: {
+                'line-color': '#38ef7d',
+                'line-width': 16,
+                'line-opacity': 0.18,
+                'line-blur': 10
+            },
+            layout: { 'line-join': 'round', 'line-cap': 'round' }
+        });
+
+        map.current.addLayer({
+            id: 'carpool-route-layer',
+            type: 'line',
+            source: 'carpool-route-source',
+            paint: {
+                'line-color': '#38ef7d',
+                'line-width': 5,
+                'line-opacity': 0.9
+            },
+            layout: { 'line-join': 'round', 'line-cap': 'round' }
+        });
+
+        // Move carpool layers above route glow so they draw on top
+        map.current.moveLayer('carpool-route-glow');
+        map.current.moveLayer('carpool-route-layer');
+
         // Event listener for station selection
         map.current.on('click', 'unclustered-point', (e) => {
             const feature = e.features[0];
             const { id, name, agency } = feature.properties;
             const displayName = `${name} (${agency})`;
+            const coords = {
+                lat: feature.geometry.coordinates[1],
+                lon: feature.geometry.coordinates[0]
+            };
 
             const { sourceId: currentSourceId, targetId: currentTargetId } = stateRef.current;
 
             if (!currentSourceId) {
                 setSourceId(id);
                 setSourceName(displayName);
+                setSourceCoords(coords);
             } else if (!currentTargetId) {
                 setTargetId(id);
                 setTargetName(displayName);
+                setTargetCoords(coords);
             } else {
                 // Both set, replace target
                 setTargetId(id);
                 setTargetName(displayName);
+                setTargetCoords(coords);
             }
         });
     });
@@ -169,11 +218,94 @@ function App() {
       setJourneys(null);
       setSelectedJourneyIndex(null);
       setError(null);
-      
+      setCarpoolResult(null);
+      setCarpoolRoadsGeoJSON({ type: 'FeatureCollection', features: [] });
+      setSourceCoords(null);
+      setTargetCoords(null);
+
       const sourceObj = map.current.getSource('route-source');
       if (sourceObj) sourceObj.setData({ type: 'FeatureCollection', features: [] });
+      const carpoolObj = map.current.getSource('carpool-route-source');
+      if (carpoolObj) carpoolObj.setData({ type: 'FeatureCollection', features: [] });
+
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
+      carpoolMarkersRef.current.forEach(m => m.remove());
+      carpoolMarkersRef.current = [];
+  };
+
+  const handleGenerateCarpool = async () => {
+      if (!sourceId || !targetId) return;
+      const sCoords = sourceCoords;
+      const tCoords = targetCoords;
+      if (!sCoords || !tCoords) {
+          setError('Stop coordinates not found. Re-select stops on the map.');
+          return;
+      }
+      setCarpoolLoading(true);
+      setCarpoolResult(null);
+      setError(null);
+      try {
+          // Step 1: Fetch road geometry from Mapbox Directions API
+          const from = `${sCoords.lon},${sCoords.lat}`;
+          const to   = `${tCoords.lon},${tCoords.lat}`;
+          const dirUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${from};${to}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+          const dirRes  = await fetch(dirUrl);
+          const dirData = await dirRes.json();
+          const roadGeometry = dirData.routes?.[0]?.geometry?.coordinates ?? null;
+
+          // Step 2: Draw route on map immediately so user sees it right away
+          if (roadGeometry && map.current) {
+              const carpoolSrc = map.current.getSource('carpool-route-source');
+              if (carpoolSrc) {
+                  carpoolSrc.setData({
+                      type: 'FeatureCollection',
+                      features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: roadGeometry }, properties: {} }]
+                  });
+              }
+              // Fly to the route
+              map.current.fitBounds(
+                  [[sCoords.lon, sCoords.lat], [tCoords.lon, tCoords.lat]],
+                  { padding: 80, duration: 1500 }
+              );
+          }
+
+          // Step 3: POST to backend with road geometry in body
+          const res = await axios.post(`${API_BASE}/carpool-route`,
+              { road_geometry: roadGeometry },
+              { params: { source: sourceId, target: targetId } }
+          );
+          const data = res.data;
+          setCarpoolResult(data);
+
+          // Step 4: Pin carpool stops on map as green markers
+          carpoolMarkersRef.current.forEach(m => m.remove());
+          carpoolMarkersRef.current = [];
+          if (data.stop_markers && map.current) {
+              data.stop_markers.forEach((sm, idx) => {
+                  const el = document.createElement('div');
+                  el.className = 'carpool-stop-marker';
+                  el.style.cssText = [
+                      'width:12px', 'height:12px', 'border-radius:50%',
+                      'background:#38ef7d', 'border:2px solid #11998e',
+                      'box-shadow:0 0 6px rgba(56,239,125,0.7)'
+                  ].join(';');
+                  const marker = new mapboxgl.Marker({ element: el })
+                      .setLngLat([sm.lon, sm.lat])
+                      .setPopup(new mapboxgl.Popup({ offset: 14 }).setHTML(
+                          `<b style="color:#11998e">🚗 Carpool Stop</b><br/>${sm.name}<br/><small>${sm.stop_id}</small>`
+                      ))
+                      .addTo(map.current);
+                  carpoolMarkersRef.current.push(marker);
+              });
+          }
+          console.log('Carpool route created:', data);
+      } catch (err) {
+          console.error('Carpool generation failed:', err);
+          setError('Failed to generate carpool route. Check that both stops are selected and the backend is running.');
+      } finally {
+          setCarpoolLoading(false);
+      }
   };
 
   const getTimeString = (date) => {
@@ -261,26 +393,95 @@ function App() {
 
   const routeGeoJSON = useMemo(() => {
     if (!selectedJourney) return null;
-    const features = selectedJourney.map((step, index) => {
-      const start = [parseFloat(step.FromStopCoords.lon), parseFloat(step.FromStopCoords.lat)];
-      const end = [parseFloat(step.ToStopCoords.lon), parseFloat(step.ToStopCoords.lat)];
-      let coordinates = [start, end];
-      if (step.Shape && step.Shape.length > 0) {
-          coordinates = step.Shape.map(pt => [pt[1], pt[0]]);
-      }
-      return {
-        type: 'Feature',
-        geometry: { type: 'LineString', coordinates },
-        properties: { isWalk: !step.RouteId }
-      };
+    const features = selectedJourney
+      .filter(step => !step.RouteId?.startsWith('Carpool'))  // exclude carpool legs from transit layer
+      .map((step) => {
+        const start = [parseFloat(step.FromStopCoords.lon), parseFloat(step.FromStopCoords.lat)];
+        const end = [parseFloat(step.ToStopCoords.lon), parseFloat(step.ToStopCoords.lat)];
+        let coordinates = [start, end];
+        if (step.Shape && step.Shape.length > 0) {
+            coordinates = step.Shape.map(pt => [pt[1], pt[0]]);
+        }
+        return {
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates },
+          properties: { isWalk: !step.RouteId }
+        };
     });
     return { type: 'FeatureCollection', features };
+  }, [selectedJourney]);
+
+  // Fetch road-following geometry for carpool legs when selected journey changes
+  useEffect(() => {
+    if (!selectedJourney) {
+      setCarpoolRoadsGeoJSON({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const carpoolLegs = selectedJourney.filter(step => step.RouteId?.startsWith('Carpool'));
+    if (carpoolLegs.length === 0) {
+      setCarpoolRoadsGeoJSON({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const fetchRoadGeometry = async () => {
+      const features = [];
+      for (const step of carpoolLegs) {
+        const from = `${parseFloat(step.FromStopCoords.lon)},${parseFloat(step.FromStopCoords.lat)}`;
+        const to = `${parseFloat(step.ToStopCoords.lon)},${parseFloat(step.ToStopCoords.lat)}`;
+        try {
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from};${to}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            features.push({
+              type: 'Feature',
+              geometry: data.routes[0].geometry,
+              properties: { isCarpool: true }
+            });
+          } else {
+            // Fallback: straight line
+            features.push({
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [parseFloat(step.FromStopCoords.lon), parseFloat(step.FromStopCoords.lat)],
+                  [parseFloat(step.ToStopCoords.lon), parseFloat(step.ToStopCoords.lat)]
+                ]
+              },
+              properties: { isCarpool: true }
+            });
+          }
+        } catch (err) {
+          console.error('Failed to fetch carpool road geometry:', err);
+          // Fallback: straight line
+          features.push({
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [parseFloat(step.FromStopCoords.lon), parseFloat(step.FromStopCoords.lat)],
+                [parseFloat(step.ToStopCoords.lon), parseFloat(step.ToStopCoords.lat)]
+              ]
+            },
+            properties: { isCarpool: true }
+          });
+        }
+      }
+      setCarpoolRoadsGeoJSON({ type: 'FeatureCollection', features });
+    };
+
+    fetchRoadGeometry();
   }, [selectedJourney]);
 
   useEffect(() => {
       if (!map.current) return;
       const sourceObj = map.current.getSource('route-source');
       if (sourceObj) sourceObj.setData(routeGeoJSON || { type: 'FeatureCollection', features: [] });
+
+      const carpoolSourceObj = map.current.getSource('carpool-route-source');
+      if (carpoolSourceObj) carpoolSourceObj.setData(carpoolRoadsGeoJSON || { type: 'FeatureCollection', features: [] });
 
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
@@ -327,7 +528,7 @@ function App() {
               .addTo(map.current);
           markersRef.current.push(marker);
       });
-  }, [selectedJourney, routeGeoJSON]);
+  }, [selectedJourney, routeGeoJSON, carpoolRoadsGeoJSON]);
 
   // Time & Status State
   const [times, setTimes] = useState({ 
@@ -472,10 +673,34 @@ function App() {
             {loading ? 'Searching...' : 'Find Route'}
           </button>
 
+          <button
+            className="carpool-button"
+            onClick={handleGenerateCarpool}
+            disabled={carpoolLoading || !sourceId || !targetId}
+          >
+            {carpoolLoading ? 'Generating...' : '🚗 Generate Carpool Route'}
+          </button>
+
           <button className="clear-button" onClick={handleClear}>
             Clear
           </button>
         </div>
+
+        {carpoolResult && (
+            <div className="carpool-result">
+                <div className="carpool-result-header">
+                    <span className="carpool-badge">🚗 CARPOOL</span>
+                    <span className="carpool-id">{carpoolResult.route_name || carpoolResult.route_id}</span>
+                </div>
+                <div className="carpool-result-info">
+                    <span>{carpoolResult.total_stops} stops ({(carpoolResult.stop_markers?.length || 0) - 2} en-route)</span>
+                    <span>{carpoolResult.start_time} → {carpoolResult.end_time}</span>
+                </div>
+                <div className="carpool-result-note">
+                    🟢 Route drawn on map. Green markers show carpool stops. Search to find trips using this carpool.
+                </div>
+            </div>
+        )}
 
         {error && <div className="error">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -545,9 +770,9 @@ function App() {
                   <div className="journey-route-preview">
                     {transitLegs.map((step, sIdx) => (
                         <React.Fragment key={sIdx}>
-                            <div className="route-pill">
-                                <span className="route-code">{step.RouteId}</span>
-                                <span className="agency-code">{step.ToStopId.split(':')[0]}</span>
+                            <div className={`route-pill ${step.RouteId?.startsWith('Carpool') ? 'carpool' : ''}`}>
+                                <span className={`route-code ${step.RouteId?.startsWith('Carpool') ? 'carpool' : ''}`}>{step.RouteId}</span>
+                                <span className="agency-code">{step.RouteId?.startsWith('Carpool') ? 'Carpool' : step.ToStopId.split(':')[0]}</span>
                             </div>
                             {sIdx < transitLegs.length - 1 && <div className="transfer-dot"></div>}
                         </React.Fragment>
@@ -583,22 +808,28 @@ function App() {
                                     <div className="node-leg-row">
                                         <div className="node-time-spacer"></div>
                                         <div className="node-connector-spacer">
-                                            <div className={`leg-line-visual ${step.RouteId ? 'transit' : 'walk'}`}></div>
+                                            <div className={`leg-line-visual ${!step.RouteId ? 'walk' : step.RouteId.startsWith('Carpool') ? 'carpool' : 'transit'}`}></div>
                                         </div>
                                         <div className="node-leg-card">
                                             <div className="leg-main">
                                                 <div className="leg-icon">
-                                                    {step.RouteId ? (
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M6 20l-1 2M19 20l1 2M4 12h16M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                                    ) : (
+                                                    {!step.RouteId ? (
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 4v2M13 18v2M12 9l-4 4 4 4"/></svg>
+                                                    ) : step.RouteId.startsWith('Carpool') ? (
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v5h-1M16 17a2 2 0 100 4 2 2 0 000-4zM7 17a2 2 0 100 4 2 2 0 000-4z"/><path d="M14 3v4h5"/></svg>
+                                                    ) : (
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M6 20l-1 2M19 20l1 2M4 12h16M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                                                     )}
                                                 </div>
                                                 <div className="leg-info-group">
                                                     <div className="leg-title">
-                                                        {step.RouteId ? `${step.RouteId} to ${step.ToStop}` : `Walk to ${step.ToStop}`}
+                                                        {!step.RouteId ? `Walk to ${step.ToStop}` : step.RouteId.startsWith('Carpool') ? `🚗 Carpool to ${step.ToStop}` : `${step.RouteId} to ${step.ToStop}`}
                                                     </div>
-                                                    {step.RouteId ? (
+                                                    {step.RouteId && step.RouteId.startsWith('Carpool') ? (
+                                                        <div className="leg-subtitle carpool-subtitle">
+                                                            Carpool #{step.RouteLongId?.split(':')[1]} • Shared ride
+                                                        </div>
+                                                    ) : step.RouteId ? (
                                                         <div className="leg-subtitle">
                                                             {step.ToStopId.split(':')[0]} Agency • Trip #{step.RouteLongId.split(':').pop()}
                                                         </div>

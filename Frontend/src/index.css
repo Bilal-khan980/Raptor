@@ -269,6 +269,14 @@ label {
   font-size: 0.7rem;
 }
 
+.route-code.carpool {
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+}
+
+.route-pill.carpool {
+  border-color: rgba(56, 239, 125, 0.25);
+}
+
 .agency-code {
   padding: 2px 6px;
   color: #888;
@@ -295,6 +303,7 @@ label {
 
 .button-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
   width: 100%;
@@ -359,6 +368,95 @@ label {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.2);
   color: #eee;
+}
+
+.carpool-button {
+  cursor: pointer;
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  border: none;
+  border-radius: 12px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #080808;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(56, 239, 125, 0.2);
+  flex: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.carpool-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(56, 239, 125, 0.4);
+}
+
+.carpool-button:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: #444;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.carpool-result {
+  margin-top: 16px;
+  background: rgba(56, 239, 125, 0.06);
+  border: 1px solid rgba(56, 239, 125, 0.25);
+  border-radius: 14px;
+  padding: 16px 18px;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.carpool-result-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.carpool-badge {
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+  color: #080808;
+  font-weight: 900;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.carpool-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #38ef7d;
+  font-weight: 700;
+}
+
+.carpool-result-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.carpool-result-note {
+  font-size: 0.65rem;
+  color: #555;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Journey Cards */
@@ -495,6 +593,7 @@ label {
   }
   
   .leg-line-visual.transit { background: #4facfe; }
+  .leg-line-visual.carpool { background: #38ef7d; }
   .leg-line-visual.walk { 
     background-image: linear-gradient(rgba(255,255,255,0.1) 33%, rgba(255,255,255,0) 0%);
     background-position: center;
@@ -542,6 +641,10 @@ label {
     text-transform: uppercase;
     letter-spacing: 0.02em;
     margin-top: 2px;
+  }
+
+  .leg-subtitle.carpool-subtitle {
+    color: #38ef7d;
   }
 
 
